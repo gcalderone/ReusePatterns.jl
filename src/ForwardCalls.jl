@@ -1,6 +1,6 @@
 module ForwardCalls
 using InteractiveUtils
-export supertypes, forward, @forward, @inherit_fields, @inheritance
+export supertypes, forward, @forward, @inherit_fields, concretetype, isinheritable, @inheritable
 
 """
 supertypes(T::Type)
@@ -19,31 +19,6 @@ end
 
 
 
-function fwd_method_as_string(send_type, send_symb, argid, method, usetypes, useallargs)
-    #pf(m, s) = @eval(m, parentmodule($s))
-    s = "p" .* string.(1:method.nargs-1)
-    (usetypes)  &&
-        (s .*= "::" .* string.(fieldtype.(Ref(method.sig), 2:method.nargs)))
-    s[argid] .= "p" .* string.(argid) .* "::$send_type"
-    if !useallargs
-        s = s[1:argid[end]]
-        push!(s, "args...")
-    end
-    m = string(method.module.eval(:(parentmodule($(method.name))))) * "."
-    l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
-
-    m = string(method.module) * "."
-    l *= ") = $m:(" * string(method.name) * ")("
-    s = "p" .* string.(1:method.nargs-1)
-    if !useallargs
-        s = s[1:argid[end]]
-        push!(s, "args...")
-    end
-    s[argid] .= "getfield(" .* s[argid] .* ", :$send_symb)"
-    l *= join(s, ", ") * "; kw...)"
-    l = join(split(l, "#"))
-    return l
-end
 
 
 # function forward(send::Tuple{Type,Symbol}, recvs::Vector{<:Type}; kw...)
@@ -54,7 +29,7 @@ end
 #     return unique(out)
 # end
 
-function forward(send::Tuple{Type,Symbol}, recv::T; super=false, kw...) where T <: Type
+function forward(send::Tuple{Type,Symbol}, recv::T; super=true, kw...) where T <: Type
     tt = [recv]
     (super)  &&  (append!(tt, supertypes(recv)))
     return forward(send, tt, methodswith(recv, supertypes=super); kw...)
@@ -64,7 +39,33 @@ forward(send::Tuple{Type,Symbol}, recvs::Vector{<:Type}, method::Method; kw...) 
 forward(send::Tuple{Type,Symbol}, recv::Type, methods::Vector{Method}; kw...) = forward(send, [recv], methods; kw...)
 
 function forward(send::Tuple{Type,Symbol}, recvs::Vector{T}, methods::Vector{Method};
-                 usetypes=false, useallargs=false) where T <: Type
+                 usetypes=true, useallargs=true) where T <: Type
+    function fwd_method_as_string(send_type, send_symb, argid, method, usetypes, useallargs)
+        #pf(m, s) = @eval(m, parentmodule($s))
+        s = "p" .* string.(1:method.nargs-1)
+        (usetypes)  &&
+            (s .*= "::" .* string.(fieldtype.(Ref(method.sig), 2:method.nargs)))
+        s[argid] .= "p" .* string.(argid) .* "::$send_type"
+        if !useallargs
+            s = s[1:argid[end]]
+            push!(s, "args...")
+        end
+        m = string(method.module.eval(:(parentmodule($(method.name))))) * "."
+        l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
+
+        m = string(method.module) * "."
+        l *= ") = $m:(" * string(method.name) * ")("
+        s = "p" .* string.(1:method.nargs-1)
+        if !useallargs
+            s = s[1:argid[end]]
+            push!(s, "args...")
+        end
+        s[argid] .= "getfield(" .* s[argid] .* ", :$send_symb)"
+        l *= join(s, ", ") * "; kw...)"
+        l = join(split(l, "#"))
+        return l
+    end
+
     @assert length(findall(isconcretetype.(recvs))) .<= 1 "Multiple concrete types in receivers array"
 
     modu = Vector{Module}()
@@ -154,46 +155,102 @@ macro inherit_fields(T)
     return esc(out)
 end
 
-macro inheritance(prefix, expr)
-    @assert isa(prefix, Symbol)
-    @assert isa(expr, Expr)
-    @assert expr.head == :struct "Expression must be a `struct`"
-    if isa(expr.args[2], Expr)  &&  (expr.args[2].head == :<:)
-        name = expr.args[2].args[1]
-        base_type = __module__.eval(expr.args[2].args[2])
-        #base_type = Expr(:., parentmodule(base), nameof(base))
-    else
-        name = expr.args[2]
-        base_type = Any
-    end
-    out = Expr(:block)
-    abstract_type = Symbol(prefix, name)
 
-    if base_type == Any
-        push!(out.args, :(abstract type $abstract_type end))
-        expr.args[2] = :($name <: $abstract_type)
-        push!(out.args, expr)
-    else
-        if !isconcretetype(base_type)
-            push!(out.args, :(abstract type $abstract_type <: $base_type end))
-            expr.args[2].args[2] = abstract_type
-            push!(out.args, expr)
-        else
-            lbase_type = __module__.eval(supertype(base_type))
-            push!(out.args, :(abstract type $abstract_type <: $lbase_type end))
-            expr.args[2].args[2] = abstract_type
-            parentfields = Expr(:block)
-            for i in fieldcount(base_type):-1:1
-                name = fieldname(base_type, i)
-                e = Expr(Symbol("::"))
-                push!(e.args, name)
-                push!(e.args, fieldtype(base_type, name))
-                pushfirst!(expr.args[3].args, e)
+function concretetype(T::Type)
+    (T == Any)  &&  (return nothing)
+    for sub in subtypes(T)
+        if isconcretetype(sub)
+            if match(r"^Concrete_", string(nameof(sub))) != nothing
+                return sub
             end
-            push!(out.args, expr)
         end
     end
+    return nothing
+end
+isinheritable(T) = concretetype(T) != nothing
+
+
+macro inheritable(expr)
+    function change_symbol!(expr, from::Symbol, to::Symbol)
+        if isa(expr, Expr)
+            for i in 1:length(expr.args)
+                if isa(expr.args[i], Symbol)  &&  (expr.args[i] == from)
+                    expr.args[1] = to
+                else
+                    if isa(expr.args[i], Expr)
+                        change_symbol!(expr.args[i], from, to)
+                    end
+                end
+            end
+        end
+    end
+
+    @assert isa(expr, Expr)
+    @assert expr.head == :struct "Expression must be a `struct`"
+
+    # Ensure there is room for the super type in the expression
+    if isa(expr.args[2], Symbol)
+        name = deepcopy(expr.args[2])
+        deleteat!(expr.args, 2)
+        insert!(expr.args, 2, Expr(:<:, name, :Any))
+    end
+    if isa(expr.args[2], Expr)  &&  (expr.args[2].head == :curly)
+        insert!(expr.args, 2, Expr(:<:, expr.args[2], :Any))
+        deleteat!(expr.args, 3)
+    end
+    @assert isa(expr.args[2], Expr)
+    @assert expr.args[2].head == :<:
+
+    # Get name and super type
+    tmp = expr.args[2].args[1]
+    @assert (isa(tmp, Symbol)  ||  (isa(tmp, Expr)  &&  (tmp.head == :curly)))
+    name = deepcopy(tmp)
+    name_symb = (isa(tmp, Symbol)  ?  tmp  :  tmp.args[1])
+
+    tmp = expr.args[2].args[2]
+    @assert (isa(tmp, Symbol)  ||  (isa(tmp, Expr)  &&  (tmp.head == :curly)))
+    super = deepcopy(tmp)
+    super_symb = (isa(tmp, Symbol)  ?  tmp  :  tmp.args[1])
+
+    # Output abstract type
+    out = Expr(:block)
+    push!(out.args, :(abstract type $name <: $super end))
+
+    # Change name in input expression
+    concrete_symb = Symbol(:Concrete_, name_symb)
+    if isa(name, Symbol)
+        concrete = concrete_symb
+    else
+        concrete = deepcopy(name)
+        change_symbol!(concrete, name_symb, concrete_symb)
+    end
+    change_symbol!(expr    , name_symb, concrete_symb)
+
+    # Change super type in input expression to actual name
+    deleteat!(expr.args[2].args, 2)
+    insert!(  expr.args[2].args, 2, name)
+
+    # If super type is inheritable retrieve the associated concrete
+    # type and add its fields as members
+    parent = concretetype(__module__.eval(super))
+    if parent != nothing
+        for i in fieldcount(parent):-1:1
+            e = Expr(Symbol("::"))
+            push!(e.args, fieldname(parent, i))
+            push!(e.args, fieldtype(parent, i))
+            pushfirst!(expr.args[3].args, e)
+        end
+    end
+
+    # Add modified input structure to output
+    push!(out.args, expr)
+
+    # Add a constructor whose name is the same as the abstract type
+    push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
+
     return esc(out)
 end
+
+
 
 end # module

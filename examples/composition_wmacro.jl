@@ -1,7 +1,7 @@
 #_____________________________________________________________________
 #                            Alice's code
 #
-using Statistics
+using Statistics, ForwardCalls
 
 abstract type AbstractPolygon end
 
@@ -61,11 +61,11 @@ side(p::RegularPolygon) = 2 * p.radius * sin(pi / vertices(p))
 area(p::RegularPolygon) = side(p)^2 * vertices(p) / 4 / tan(pi / vertices(p))
 
 # Forward methods from `RegularPolygon` to `Polygon`
-vertices(p1::RegularPolygon) = vertices(getfield(p1, :polygon))
-coords_x(p1::RegularPolygon) = coords_x(getfield(p1, :polygon))
-coords_y(p1::RegularPolygon) = coords_y(getfield(p1, :polygon))
-move!(p1::RegularPolygon, p2::Real, p3::Real) = move!(getfield(p1, :polygon), p2, p3)
-rotate!(p1::RegularPolygon, p2::Real) = rotate!(getfield(p1, :polygon), p2)
+@forward (RegularPolygon, :polygon) Polygon
+
+
+
+
 function scale!(p::RegularPolygon, scale::Real)
     scale!(p.polygon, scale) # call "super" method
     p.radius *= scale        # update internal state
@@ -80,14 +80,4 @@ Named{T}(name, args...; kw...) where T = Named{T}(T(args...; kw...), name)
 name(p::Named) = p.name
 
 # Forward methods from `Named` to `Polygon`
-vertices(p1::Named) = vertices(getfield(p1, :polygon))
-coords_x(p1::Named) = coords_x(getfield(p1, :polygon))
-coords_y(p1::Named) = coords_y(getfield(p1, :polygon))
-move!(p1::Named, p2::Real, p3::Real) = move!(getfield(p1, :polygon), p2, p3)
-rotate!(p1::Named, p2::Real) = rotate!(getfield(p1, :polygon), p2)
-function scale!(p::Named, scale::Real)
-    scale!(p.polygon, scale) # call "super" method
-end
-side(p1::Named) = side(getfield(p1, :polygon))
-area(p1::Named) = area(getfield(p1, :polygon))
-
+@forward (Named, :polygon) RegularPolygon
