@@ -72,11 +72,10 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
     
     # Seacrh for receiver type in method arguments
     foundat = Vector{Int}()
-    foundsender = false
     for i in 2:method.nargs
         argtype = fieldtype(method.sig, i)
+        (sender[1] == argtype)  &&  (return code)            
         if argtype != Any
-            @assert sender[1] != argtype
             (typeintersect(receiver, argtype) != Union{})  &&  (push!(foundat, i-1))
         end
     end
@@ -130,14 +129,21 @@ macro forward(sender, receiver, ekws...)
         push!(kws, Pair(kw.args[1], kw.args[2]))
     end
     out = quote
-        for line in forward($sender, $receiver; $kws...)
+        counterr = 0
+        list = forward($sender, $receiver; $kws...)
+        for line in list
             try
                 eval(Meta.parse("$line"))
             catch err
+                global counterr += 1
                 println()
                 println("$line")
                 @error err;
             end
+        end
+        println(length(list) - counterr, " method(s) forwarded")
+        if counterr > 0
+            println(counterr, " method(s) raised an error")
         end
     end
     return esc(out)
