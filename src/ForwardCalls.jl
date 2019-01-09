@@ -1,6 +1,9 @@
 module ForwardCalls
 using InteractiveUtils
 
+# TODO
+# - forward macro calls
+
 export supertypes, forward, @forward,
     @inherit_fields, concretetype, isinheritable, @inheritable
 
@@ -80,6 +83,12 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         end
     end
     (length(foundat) == 0)  &&  (return code)
+    if string(method.name)[1] == '@'
+        @warn "Forwarding macros is not yet supported."
+        display(method)
+        println()
+        return code
+    end
     
     for argid in foundat
         push!(code, newmethod(sender_type, sender_symb, [argid], method, withtypes, allargs))
@@ -92,8 +101,16 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             println()
         end
     end
+
+    tmp = split(string(method.module), ".")[1]
+    code = "@eval " .* tmp .* " " .* code .*
+        " # " .* string(method.file) .* ":" .* string(method.line)
+    if  (tmp != "Base")  &&
+        (tmp != "Main")
+        pushfirst!(code, "using $tmp")
+    end
     code = unique(code)
-    return "@eval " .* string(method.module) .* " " .* code
+    return code
 end
 
 
