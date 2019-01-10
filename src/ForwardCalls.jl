@@ -5,12 +5,19 @@ using InteractiveUtils
 # - forward macro calls
 
 export supertypes, forward, @forward,
-    @inherit_fields, concretetype, isinheritable, @inheritable
+    @copy_fields, concretetype, isinheritable, @inheritable
+
 
 """
-supertypes(T::Type)
+`supertypes(T::Type)`
 
 Returns a vector with all supertypes of type `T` (excluding `Any`).
+
+# Example
+```julia-repl
+julia> println(supertypes(Int))
+Type[Signed, Integer, Real, Number]
+```
 """
 function supertypes(T::Type)::Vector{Type}
     out = Vector{Type}()
@@ -21,9 +28,6 @@ function supertypes(T::Type)::Vector{Type}
     end
     return out
 end
-
-
-
 
 
 """
@@ -39,7 +43,7 @@ Both keywords are `true` by defult, but they can be set to `false` to decrease t
 
 # Example:
 Implement a wrapper for an `Int` object, and forward the `+` method accepting `Int`:
-```
+```julia-repl
 struct Wrapper{T}
     wrappee::T
     extra
@@ -166,7 +170,6 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)
     return forward(sender, tt, methodswith(receiver, supertypes=super); kw...)
 end
 
-
 """
 `@forward(sender, receiver, ekws...)`
 
@@ -209,8 +212,31 @@ macro forward(sender, receiver, ekws...)
 end
 
 
+"""
+`@copy_fields T`
 
-macro inherit_fields(T)
+Copy all field definitions from a structure into another.
+
+# Example
+```julia-repl
+
+julia> struct First
+    field1
+    field2::Int
+end
+julia> struct Second
+    @copy_fields(First)
+    field3::String
+end
+
+julia> println(fieldnames(Second))
+(:field1, :filed2, :field3)
+
+julia> println(fieldtype.(Second, fieldnames(Second)))
+(Any, Int64, String)
+```
+"""
+macro copy_fields(T)
     out = Expr(:block)
     for name in fieldnames(__module__.eval(T))
         e = Expr(Symbol("::"))
@@ -222,8 +248,16 @@ macro inherit_fields(T)
 end
 
 
+"""
+`concretetype(T::Type)`
+
+Return the concrete type associated with the *inheritable* abstract type `T`. If `T` is not *inheritable* returns nothing.
+
+See also: `@inheritable`
+"""
 function concretetype(T::Type)
     (T == Any)  &&  (return nothing)
+    @assert isabstracttype(T) "Input type must be an abstract type"
     for sub in subtypes(T)
         if isconcretetype(sub)
             if match(r"^Concrete_", string(nameof(sub))) != nothing
@@ -233,9 +267,61 @@ function concretetype(T::Type)
     end
     return nothing
 end
+
+
+"""
+`isinheritable(T::Type)`
+
+Return `true` if the the abstract type `T` is *inheritable*, `false` otherwise.
+
+See also: `@inheritable`
+"""
 isinheritable(T) = concretetype(T) != nothing
 
 
+"""
+`@inheritable expression`
+
+Create an *inheritable* structure definition.
+
+This macro accepts an expression defining a (mutable or immutable) structure, and outputs the code for two new type definitions:
+- an abstract type with the same name and (if given) supertype of the input structure;
+- a concrete structure definition with name prefix `Concrete_`, subtyping the abstract type defined above.
+
+The relation between these types ensure there will be a single concrete type associated to the abstract one, hence you can use the abstract type to annotate method arguments, and be sure to receive the associated concrete type, or one of its subtypes (which shares all field name and type of the ancestor).
+
+The concrete type associated to an *inheritable* abstract type can be retrieved with the `concretetype` function.
+
+These newly defined types allows to easily implement single inheritance in Julia: simply use the abstract type name for both object construction and to annotate method arguments.  
+
+# Example:
+```julia-repl
+julia> @inheritable struct Bird
+    weight::Float64
+end
+
+julia> fly(b::Bird) = "Flying..."
+julia> weight(b::Bird) = b.weight
+
+julia> @inheritable struct Duck <: Bird
+    color::String
+end
+
+julia> quack(d::Duck) = "Quack!!!"
+
+julia> println(fieldnames(concretetype(Duck)))
+(:weight, :color)
+
+julia> duck = Duck(1.0, "Brown")
+Concrete_Duck(1.0, "Brown")
+
+julia> fly(duck)
+"Flying..."
+
+julia> quack(duck)
+"Quack!!!"
+```
+"""
 macro inheritable(expr)
     function change_symbol!(expr, from::Symbol, to::Symbol)
         if isa(expr, Expr)
@@ -316,7 +402,5 @@ macro inheritable(expr)
 
     return esc(out)
 end
-
-
 
 end # module
