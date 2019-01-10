@@ -10,7 +10,7 @@ export supertypes, forward, @forward,
 """
 supertypes(T::Type)
 
-Returns a vector array with all supertypes of type `T` (excluding `Any`).
+Returns a vector with all supertypes of type `T` (excluding `Any`).
 """
 function supertypes(T::Type)::Vector{Type}
     out = Vector{Type}()
@@ -27,17 +27,34 @@ end
 
 
 """
+`forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method; withtypes=true, allargs=true)`
 
+Return a `Vector{String}` containing the Julia code to properly forward `method` calls to from a `sender` type to a receiver type.
+
+The `sender` tuple must contain a structure type, and a symbol with the name of one of its fields.
+
+The `withtypes` keyword controls whether the forwarding method has type annotated arguments.  The `allargs` keyword controls wether all arguments should be used, or just the first ones up to the last containing the `receiver` type.
+
+Both keywords are `true` by defult, but they can be set to `false` to decrease the number of forwarding methods.
+
+# Example:
+Implement a wrapper for an `Int` object, and forward the `+` method accepting `Int`:
 ```
 struct Wrapper{T}
     wrappee::T
     extra
     Wrapper{T}(args...; kw...) where T = new(T(args...; kw...), nothing)
 end
-eval.(Meta.parse.(forward((Wrapper, :wrappee), Int, which(+, (Int, Int)))))
 
+# Prepare and evaluate forwarding methods:
+m = forward((Wrapper, :wrappee), Int, which(+, (Int, Int)))
+eval.(Meta.parse.(m))
+
+# Instantiate two wrapped `Int`
 i1 = Wrapper{Int}(1)
 i2 = Wrapper{Int}(2)
+
+# And add them seamlessly
 println(i1 +  2)
 println( 1 + i2)
 println(i1 + i2)
@@ -114,6 +131,9 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
 end
 
 
+"""
+`forward(sender::Tuple{Type,Symbol}, receiver::Type, methods::Vector{Method}; kw...)`
+"""
 function forward(sender::Tuple{Type,Symbol}, receiver::Type, methods::Vector{Method}; kw...)
     code = Vector{String}()
     for m in methods
@@ -123,6 +143,9 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, methods::Vector{Met
     return code
 end
 
+"""
+`forward(sender::Tuple{Type,Symbol}, receivers::Vector{T}, methods; kw...)`
+"""
 function forward(sender::Tuple{Type,Symbol}, receivers::Vector{T}, methods; kw...) where T <: Type
     code = Vector{String}()
     for t in receivers
@@ -132,6 +155,11 @@ function forward(sender::Tuple{Type,Symbol}, receivers::Vector{T}, methods; kw..
     return code
 end
 
+"""
+`forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)`
+
+Wrapper for `forward(send, receiver, supertypes(receiver, super=super); kw...)`
+"""
 function forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)
     tt = [receiver]
     (super)  &&  (append!(tt, supertypes(receiver)))
@@ -139,15 +167,29 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)
 end
 
 
+"""
+`@forward(sender, receiver, ekws...)`
 
+Evaluate the Julia code to forward methods.  The syntax is exactly the same as the `forward` function.
+"""
 macro forward(sender, receiver, ekws...)
     kws = Vector{Pair{Symbol,Any}}()
+    methods = nothing
     for kw in ekws
-        push!(kws, Pair(kw.args[1], kw.args[2]))
+        if isa(kw, Expr)  &&  (kw.head == :(=))
+            push!(kws, Pair(kw.args[1], kw.args[2]))
+        else
+            @assert methods == nothing "Too many arguments"
+            methods = kw
+        end
     end
     out = quote
         counterr = 0
-        list = forward($sender, $receiver; $kws...)
+        if $methods == nothing
+            list = forward($sender, $receiver; $kws...)
+        else
+            list = forward($sender, $receiver, $methods; $kws...)
+        end
         for line in list
             try
                 eval(Meta.parse("$line"))
