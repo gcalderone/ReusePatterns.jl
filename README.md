@@ -1,4 +1,4 @@
-# # ReusePatterns.jl
+# ReusePatterns.jl
 ## Simple tools to implement *inheritance* and *composition* patterns in Julia.
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
@@ -12,20 +12,18 @@ Still there can be cases where the *inheritance* approach turns out to be the mo
 
 Besides, the **ReusePatterns.jl** package allows to use both approaches, and check which one provides a better solution.
 
-The motivation to develop this package stems from the following post on the Discourse.
-- 
-
+The motivation to develop this package stems from the following post on the Discourse:
 but several other topics apply as well (see list in the *Links* section below).
 
 
 
 
 
-# Composition
+## Composition
 
-# Inheritance (simple approach, allows multiple inheritance)
+## Inheritance (simple approach)
 
-# Inheritance (advanced approach, only single inheritnce allowed)
+## Inheritance (advanced approach)
 
 
 
