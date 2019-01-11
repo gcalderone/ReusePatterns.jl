@@ -1,5 +1,6 @@
 module ReusePatterns
 using InteractiveUtils
+using Combinatorics
 
 # TODO
 # - forward macro calls
@@ -111,17 +112,9 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         println()
         return code
     end
-    
-    for argid in foundat
-        push!(code, newmethod(sender_type, sender_symb, [argid], method, withtypes, allargs))
-    end
-    if length(foundat) > 1
-        push!(code, newmethod(sender_type, sender_symb, foundat, method, withtypes, allargs))
-        if length(foundat) >= 3
-            @warn "The following method accept the same argument three or more times.  Not all combinations will be automatically forwarded."
-            display(method)
-            println()
-        end
+
+    for ii in combinations(foundat)
+        push!(code, newmethod(sender_type, sender_symb, ii, method, withtypes, allargs))
     end
 
     tmp = split(string(method.module), ".")[1]
