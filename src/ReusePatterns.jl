@@ -1,4 +1,4 @@
-module ForwardCalls
+module ReusePatterns
 using InteractiveUtils
 
 # TODO
@@ -255,19 +255,7 @@ Return the concrete type associated with the *inheritable* abstract type `T`. If
 
 See also: `@inheritable`
 """
-function concretetype(T::Type)
-    (T == Any)  &&  (return nothing)
-    @assert isabstracttype(T) "Input type must be an abstract type"
-    for sub in subtypes(T)
-        if isconcretetype(sub)
-            if match(r"^Concrete_", string(nameof(sub))) != nothing
-                return sub
-            end
-        end
-    end
-    return nothing
-end
-
+concretetype(T::Type) = nothing
 
 """
 `isinheritable(T::Type)`
@@ -276,7 +264,7 @@ Return `true` if the the abstract type `T` is *inheritable*, `false` otherwise.
 
 See also: `@inheritable`
 """
-isinheritable(T) = concretetype(T) != nothing
+isinheritable(T::Type) = false
 
 
 """
@@ -288,9 +276,9 @@ This macro accepts an expression defining a (mutable or immutable) structure, an
 - an abstract type with the same name and (if given) supertype of the input structure;
 - a concrete structure definition with name prefix `Concrete_`, subtyping the abstract type defined above.
 
-The relation between these types ensure there will be a single concrete type associated to the abstract one, hence you can use the abstract type to annotate method arguments, and be sure to receive the associated concrete type, or one of its subtypes (which shares all field name and type of the ancestor).
+The relation between the types ensure there will be a single concrete type associated to the abstract one, hence you can use the abstract type to annotate method arguments, and be sure to receive the associated concrete type, or one of its subtypes (which shares all field names and types of the ancestor).
 
-The concrete type associated to an *inheritable* abstract type can be retrieved with the `concretetype` function.
+The concrete type associated to an *inheritable* abstract type can be retrieved with the `concretetype` function.  The `Concrete_` prefix can be customized passing a second symbol argument to the macro.
 
 These newly defined types allows to easily implement single inheritance in Julia: simply use the abstract type name for both object construction and to annotate method arguments.  
 
@@ -322,7 +310,7 @@ julia> quack(duck)
 "Quack!!!"
 ```
 """
-macro inheritable(expr)
+macro inheritable(expr, prefix=:Concrete_)
     function change_symbol!(expr, from::Symbol, to::Symbol)
         if isa(expr, Expr)
             for i in 1:length(expr.args)
@@ -369,7 +357,7 @@ macro inheritable(expr)
     push!(out.args, :(abstract type $name <: $super end))
 
     # Change name in input expression
-    concrete_symb = Symbol(:Concrete_, name_symb)
+    concrete_symb = Symbol(prefix, name_symb)
     if isa(name, Symbol)
         concrete = concrete_symb
     else
@@ -400,6 +388,10 @@ macro inheritable(expr)
     # Add a constructor whose name is the same as the abstract type
     push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
 
+    # Add `concretetype` and `isinheritable` methods
+    push!(out.args, :(ReusePatterns.concretetype(::Type{$name}) = $concrete))
+    push!(out.args, :(ReusePatterns.isinheritable(::Type{$name}) = true))
+    
     return esc(out)
 end
 
