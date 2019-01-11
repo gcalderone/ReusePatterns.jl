@@ -12,7 +12,7 @@ This package provides a few tools to facilitate Bob's work in reusing Alice's co
 
 *Inheritance* is not supported in Julia by design, and although it can be realized through this package (or similar ones, see *Links* below), it is a discouraged practice: *composition* should be the preferred approach.
 
-Still there can be cases where the *inheritance* approach turns out to be the most simple and straightforward way to solve a problem, while pursuing the same goal with *composition* implies flooding the dispatch table with a lot of boiler plate code.  In these cases I believe it may be worth following the *inheritance* approach.
+Still there can be cases where the *inheritance* approach turns out to be the most simple and straightforward way to solve a problem, while pursuing the same goal with *composition* would imply flooding the dispatch table with a lot of boiler plate code.  In these cases I believe it may be worth following the *inheritance* approach.
 
 Besides, the **ReusePatterns.jl** package allows to test both approaches, and check which one provides the best solution.
 
@@ -30,8 +30,12 @@ With [composition](https://en.wikipedia.org/wiki/Object_composition) we wrap an 
 We pursue this goal by automatically forwarding all methods calls from Bob's structure to the appropriate Alice's object.
 
 The *composition* approach has the following advantages:
-- It is always applicable, even if Alice and Bob do not agree on a particular type hierarchy;
-- it is the recommended Julian way to pursue code reusing (besides `module`s)
+- It is applicable even if Alice and Bob do not agree on a particular type architecture;
+- it is the recommended Julian way to pursue code reusing;
+
+...and disadvantages:
+- It may be cumbersome to apply if the number of methods to forward is very high, or if the method definitions are spread across many modules;
+- It introduces a small performance overhead.
 
 ### Example:
 
