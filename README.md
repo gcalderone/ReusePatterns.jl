@@ -3,15 +3,18 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
 
-This package provides a few tools to implement the most common code reusing patterns, namely *composition* and *inheritance*.
+Assume an author **A** (say, Alice) wrote a very useful package, and another autor **B** (say, Bob) wish to reuse that code to provide more complex functionalities to a final user **C** (say, Charlie).
 
-**IMPORTANT NOTE**
+This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of the most common reuse patterns, namely *composition* and *inheritance*.  Also, it aims to relieve Charlie from dealing with the underlying code details.
 
-*Inheritance* is not supported in Julia by design, and although it can be realized through this package (or similar ones, see *Links* below), it is a discouraged practice and *composition* should be the preferred approach.
+
+**IMPORTANT NOTE:**
+
+*Inheritance* is not supported in Julia by design, and although it can be realized through this package (or similar ones, see *Links* below), it is a discouraged practice: *composition* should be the preferred approach.
 
 Still there can be cases where the *inheritance* approach turns out to be the most simple and straightforward way to solve a problem, while pursuing the same goal with *composition* implies flooding the dispatch table with a lot of boiler plate code.  In these cases I believe it may be worth following the *inheritance* approach.
 
-Besides, the **ReusePatterns.jl** package allows to use both approaches, and check which one provides a better solution.
+Besides, the **ReusePatterns.jl** package allows to test both approaches, and check which one provides a better solution.
 
 The motivation to develop this package stems from the following posts on the Discourse:
 - https://discourse.julialang.org/t/composition-and-inheritance-the-julian-way/11231
@@ -24,6 +27,8 @@ but several other topics apply as well (see list in the *Links* section below).
 
 
 ## Composition
+
+[Composition](https://en.wikipedia.org/wiki/Object_composition)
 
 ```julia
 using DataFrames, ReusePatterns
@@ -47,11 +52,11 @@ end
 
 ## Links 
 
-### Related topics on Discourse:
+### Related topics on Discourse and other websites:
 - https://discourse.julialang.org/t/guidelines-to-distinguish-concrete-from-abstract-types/19162
 
 
-### Pacakges providing similar functionalities
+### Pacakges providing similar functionalities:
 (in no particolar order)
 
 - https://github.com/JuliaArbTypes/TypedDelegation.jl
