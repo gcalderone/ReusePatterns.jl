@@ -34,37 +34,8 @@ We pursue this goal by automatically forwarding all methods calls from Bob's str
 
 ### Example:
 
-Implement a wrapper for an `Int` object, and forward the `+` method accepting `Int`:
-```julia
-struct Wrapper{T}
-    wrappee::T
-    extra
-    Wrapper{T}(args...; kw...) where T = new(T(args...; kw...), nothing)
-end
-
-# Prepare and evaluate forwarding methods:
-m = forward((Wrapper, :wrappee), Int, which(+, (Int, Int)))
-eval.(Meta.parse.(m))
-
-# Instantiate two wrapped `Int`
-i1 = Wrapper{Int}(1)
-i2 = Wrapper{Int}(2)
-
-# And add them seamlessly
-println(i1 +  2)
-println( 1 + i2)
-println(i1 + i2)
-```
-
-
-### Tools provided by the **ReusePatterns.jl** package:
-
-
-## Inheritance (simple approach)
-
-## Inheritance (advanced approach)
-
-## Complete examples
+Alice implemented the [DataFrame](https://github.com/JuliaData/DataFrames.jl) package, Bob
+wish to add metadata informations to a DataFrame object (see [here](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168), and Charlie wants to use the metadata added by Bob without touching its code working with Alice's dataframes:
 ```julia
 using DataFrames, ReusePatterns
 
@@ -75,7 +46,19 @@ struct DataFrameMeta <: AbstractDataFrame
     DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
 end
 @forward((DataFrameMeta, :p), DataFrame)
+meta(d::DataFrameMeta) = getfield(d,:meta)
 ```
+
+
+
+### Tools provided by the **ReusePatterns.jl** package:
+
+
+## Inheritance (simple approach)
+
+## Inheritance (advanced approach)
+
+## Complete examples
 
 
 
