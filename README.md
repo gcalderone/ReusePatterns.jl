@@ -3,7 +3,7 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
 
-Assume an author **A** (say, Alice) wrote a very powerful Julia code, extensively used by the user **C** (say, Charlie).  The best code reusing practice in this "two actors" scenario is the package deployment, thoroughly discussed in the Julia manual.  Now assume a third person **B** (say, Bob) slip between Alice and Charlie: he wish to reuse Alice's code to provide more complex/extended functionalities to Charlie.  Most likely Bob will need a more sophisticated reuse pattern...
+Assume an author **A** (say, Alice) wrote a very powerful Julia code, extensively used by user **C** (say, Charlie).  The best code reusing practice in this "two actors" scenario is the package deployment, thoroughly discussed in the Julia manual.  Now assume a third person **B** (say, Bob) slip between Alice and Charlie: he wish to reuse Alice's code to provide more complex/extended functionalities to Charlie.  Most likely Bob will need a more sophisticated reuse pattern...
 
 This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of the most common reuse patterns: *composition* and *inheritance*.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob without changing the code dealing with Alice's package.
 
@@ -34,8 +34,9 @@ The *composition* approach has the following advantages:
 - it is the recommended Julian way to pursue code reusing;
 
 ...and disadvantages:
-- It may be cumbersome to apply if the number of methods to forward is very high, or if the method definitions are spread across many modules;
-- It introduces a small performance overhead.
+- It may be cumbersome to apply if the number of involved methods is very high, or if the method definitions are spread across many modules;
+- *composition* is not recursive, i.e. if further users (**D**an, **E**mily, etc.) build composite layers on top of Bob's one they'll need to implement new forwarding methods.
+- It introduces a small overhead for each composition layer, resulting in performance loss;
 
 ### Example:
 
@@ -51,8 +52,8 @@ struct DataFrameMeta <: AbstractDataFrame
     DataFrameMeta(args...; kw...) = new(DataFrame(args...; kw...), Dict{Symbol, Any}())
     DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
 end
-@forward((DataFrameMeta, :p), DataFrame)
-meta(d::DataFrameMeta) = getfield(d,:meta)
+meta(d::DataFrameMeta) = getfield(d,:meta)  # <-- new functionality added to DataFrame
+@forward((DataFrameMeta, :p), DataFrame)    # <-- reuse all existing functionalities
 
 # Chalie's code
 df = DataFrameMeta(A = 1:10, B = ["x","y","z"][rand(1:3, 10)], C = rand(10))
@@ -74,10 +75,24 @@ The **ReusePatterns.jl** package exports the following functions and macros aime
 Each function and macro has its own online documentation accessible by prepending `?` to the name.
 
 
-## Inheritance (simple approach)
+## Simple inheritance
+
 - `@copy_fields`: copy field names and types from one structure to another.
 
 Each function and macro has its own online documentation accessible by prepending `?` to the name.
+
+
+The *simple inheritance* approach has the following advantages:
+
+- It is the simple most approach, by far simpler than *composition*, involving just a code copy/paste among structure definitions.  Such task can be automatized with the `@copy_fields` macro;
+- It is a recursive approach, i.e. if further users (**D**an, **E**mily, etc.) inherits from Bob's structure they will  have all the inherited behavior for free;
+- There is no overhead or performance loss.
+
+...and disadvantages:
+- it is applicable **only if** if all the argument type annotations in Alice's method signatures are abstract, **and if** Bob uses concrete types that share at least a common field subset with those used by Alice;
+- Charlie may break Alice's or Bob's code by using a concrete type without the required fields.  Moreover, Dan may break Alice's, Bob's or Chharlie's code, Emily may break A's, B's, C's, D's code, and so on...
+
+
 
 ## Inheritance (advanced approach)
 - `@inheritable`: define a new *inheritable* type with an associate concrete structure;
