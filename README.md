@@ -3,7 +3,7 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
 
-This package provides a few tools to implement the most common code reusing patterns in Julia, namely *composition* and *inheritance*.
+This package provides a few tools to implement the most common code reusing patterns, namely *composition* and *inheritance*.
 
 **IMPORTANT NOTE**
 
@@ -14,6 +14,9 @@ Still there can be cases where the *inheritance* approach turns out to be the mo
 Besides, the **ReusePatterns.jl** package allows to use both approaches, and check which one provides a better solution.
 
 The motivation to develop this package stems from the following posts on the Discourse:
+- https://discourse.julialang.org/t/composition-and-inheritance-the-julian-way/11231
+- https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168
+
 but several other topics apply as well (see list in the *Links* section below).
 
 
@@ -21,6 +24,22 @@ but several other topics apply as well (see list in the *Links* section below).
 
 
 ## Composition
+
+```julia
+module DataFramesMeta
+
+using DataFrames, ReusePatterns
+export DataFrameMeta
+
+struct DataFrameMeta <: AbstractDataFrame
+    p::DataFrame
+    meta::Dict{Symbol, Any}
+    DataFrameMeta(args...; kw...) = new(DataFrame(args...; kw...), Dict{Symbol, Any}())
+    DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
+end
+@forward((DataFrameMeta, :p), DataFrame)
+end
+```
 
 ## Inheritance (simple approach)
 
@@ -33,7 +52,7 @@ but several other topics apply as well (see list in the *Links* section below).
 ## Links 
 
 ### Related topics on Discourse:
-- https://discourse.julialang.org/t/guidelines-to-distinguish-concrete-from-abstract-types/19162/5
+- https://discourse.julialang.org/t/guidelines-to-distinguish-concrete-from-abstract-types/19162
 
 
 ### Pacakges providing similar functionalities
