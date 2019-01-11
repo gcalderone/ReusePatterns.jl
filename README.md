@@ -5,6 +5,8 @@
 
 Assume an author **A** (say, Alice) wrote a very useful package, and another autor **B** (say, Bob) wish to reuse that code to provide more complex/extended functionalities to a final user **C** (say, Charlie).
 
+If only Alice and Charlie were involved the best code reusing practice is the package development, thoroughly discussed in the Julia manual.  But since Bob squeezed between Alice and Charlie we need a more sophisticated approach.
+
 This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of the most common reuse patterns: *composition* and *inheritance*.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob without changing the code dealing with Alice's package.
 
 
@@ -28,6 +30,10 @@ but several other topics apply as well (see list in the *Links* section below).
 With [composition](https://en.wikipedia.org/wiki/Object_composition) we wrap an Alice's object into a structure implemented by Bob, and let Charlie use the latter without even knowing if it actually is the original Alice's object or the Bob's one.
 
 We pursue this goal by automatically forwarding all methods calls from Bob's structure to the appropriate Alice's object.
+
+The *composition* approach has the following advantages:
+- It is always applicable, even if Alice and Bob do not agree on a particular type hierarchy;
+- it is the recommended Julian way to pursue code reusing (besides `module`s)
 
 ### Example:
 
