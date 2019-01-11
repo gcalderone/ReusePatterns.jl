@@ -5,7 +5,7 @@ using InteractiveUtils
 # - forward macro calls
 
 export supertypes, forward, @forward,
-    @copy_fields, concretetype, isinheritable, @inheritable
+    @copy_fields, concretetype, concretesubtypes, isinheritable, @inheritable
 
 
 """
@@ -256,6 +256,17 @@ Return the concrete type associated with the *inheritable* abstract type `T`. If
 See also: `@inheritable`
 """
 concretetype(T::Type) = nothing
+
+
+"""
+`concretesubtypes(T::Type)`
+
+Return a vector whose elements are the concrete types associated with the *inheritable* subtypes of `T`.  If there are no concrete types returns nothing.
+
+See also: `@inheritable`
+"""
+concretesubtypes(T::Type) = something([concretetype(a) for a in subtypes(T)]...)
+
 
 """
 `isinheritable(T::Type)`
