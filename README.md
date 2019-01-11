@@ -3,9 +3,7 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
 
-Assume an author **A** (say, Alice) wrote a very useful package, and another autor **B** (say, Bob) wish to reuse that code to provide more complex/extended functionalities to a final user **C** (say, Charlie).
-
-If only Alice and Charlie were involved the best code reusing practice is the package development, thoroughly discussed in the Julia manual.  But since Bob squeezed between Alice and Charlie we need a more sophisticated approach.
+Assume an author **A** (say, Alice) wrote a very powerful Julia code, extensively used by the user **C** (say, Charlie).  The best code reusing practice in this "two actors" scenario is the package deployment, thoroughly discussed in the Julia manual.  Now assume a third person **B** (say, Bob) slip between Alice and Charlie: he wish to reuse Alice's code to provide more complex/extended functionalities to Charlie.  Most likely Bob will need a more sophisticated reuse pattern...
 
 This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of the most common reuse patterns: *composition* and *inheritance*.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob without changing the code dealing with Alice's package.
 
