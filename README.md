@@ -34,22 +34,34 @@ We pursue this goal by automatically forwarding all methods calls from Bob's str
 
 ### Example:
 
-Alice implemented the [DataFrame](https://github.com/JuliaData/DataFrames.jl) package, Bob
-wish to add metadata informations to a DataFrame object (see [here](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168), and Charlie wants to use the metadata added by Bob without touching its code working with Alice's dataframes:
+Alice implemented the [DataFrames](https://github.com/JuliaData/DataFrames.jl) package, Bob
+wish to add metadata informations to a DataFrame object (see [here](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168)), and Charlie wants to use the metadata added by Bob without adapting its code to the new functionalities:
+
 ```julia
+# Bob's code
 using DataFrames, ReusePatterns
 
 struct DataFrameMeta <: AbstractDataFrame
     p::DataFrame
-    meta::Dict{Symbol, Any}
+    meta::Dict{String, Any}
     DataFrameMeta(args...; kw...) = new(DataFrame(args...; kw...), Dict{Symbol, Any}())
     DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
 end
 @forward((DataFrameMeta, :p), DataFrame)
 meta(d::DataFrameMeta) = getfield(d,:meta)
+
+# Chalie's code
+df = DataFrameMeta(A = 1:10, B = ["x","y","z"][rand(1:3, 10)], C = rand(10))
+meta(df)["Source"] = "Bob"
+show(df)
+
+# ... use `df` as if it was a simple DataFrame object ...
 ```
-
-
+The key line here is:
+```julia
+@forward((DataFrameMeta, :p), DataFrame)
+```
+The `@forward` macro identifies all methods accepting a `DataFrame` object, and defines new methods with the same name and arguments, but accepting `DataFrameMeta` arguments in place of the `DataFrame`  ones.  The purpose of each newly defined method is simply to forward the call to the original method, passing the `DataFrame` object stored in the `:p` field.
 
 ### Tools provided by the **ReusePatterns.jl** package:
 
