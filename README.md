@@ -26,10 +26,7 @@ but several other topics apply as well (see list in the *Links* section below).
 ## Composition
 
 ```julia
-module DataFramesMeta
-
 using DataFrames, ReusePatterns
-export DataFrameMeta
 
 struct DataFrameMeta <: AbstractDataFrame
     p::DataFrame
@@ -38,7 +35,6 @@ struct DataFrameMeta <: AbstractDataFrame
     DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
 end
 @forward((DataFrameMeta, :p), DataFrame)
-end
 ```
 
 ## Inheritance (simple approach)
