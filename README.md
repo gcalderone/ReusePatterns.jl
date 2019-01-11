@@ -23,9 +23,6 @@ The motivation to develop this package stems from the following posts on the Dis
 but several other topics apply as well (see list in the *Links* section below).
 
 
-
-
-
 ## Composition
 
 With [composition](https://en.wikipedia.org/wiki/Object_composition) we wrap an Alice's object into a structure implemented by Bob, and let Charlie use the latter without even knowing if it actually is the original Alice's object or the Bob's one.
@@ -35,8 +32,7 @@ We pursue this goal by automatically forwarding all methods calls from Bob's str
 ### Example:
 
 Alice implemented the [DataFrames](https://github.com/JuliaData/DataFrames.jl) package, Bob
-wish to add metadata informations to a DataFrame object (see [here](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168)), and Charlie wants to use the metadata added by Bob without adapting its code to the new functionalities:
-
+wish to add metadata informations to a DataFrame object (see [here](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168)), and Charlie wants to use the metadata added by Bob by saving most of its code already working on Alice's package:
 ```julia
 # Bob's code
 using DataFrames, ReusePatterns
@@ -55,7 +51,7 @@ df = DataFrameMeta(A = 1:10, B = ["x","y","z"][rand(1:3, 10)], C = rand(10))
 meta(df)["Source"] = "Bob"
 show(df)
 
-# ... use `df` as if it was a simple DataFrame object ...
+# ... use `df` as if it was a common DataFrame object ...
 ```
 The key line here is:
 ```julia
@@ -63,12 +59,26 @@ The key line here is:
 ```
 The `@forward` macro identifies all methods accepting a `DataFrame` object, and defines new methods with the same name and arguments, but accepting `DataFrameMeta` arguments in place of the `DataFrame`  ones.  The purpose of each newly defined method is simply to forward the call to the original method, passing the `DataFrame` object stored in the `:p` field.
 
-### Tools provided by the **ReusePatterns.jl** package:
+The **ReusePatterns.jl** package exports the following functions and macros aimed to implement  composition in Julia:
+- `forward`: return a `Vector{String}` with the code to properly forward method calls;
+- `@forward`: forward method calls from an object to a field structure;
+
+Each function and macro has its own online documentation accessible by prepending `?` to the name.
 
 
 ## Inheritance (simple approach)
+- `@copy_fields`: copy field names and types from one structure to another.
+
+Each function and macro has its own online documentation accessible by prepending `?` to the name.
 
 ## Inheritance (advanced approach)
+- `@inheritable`: define a new *inheritable* type with an associate concrete structure;
+- `concretetype`, `concretesubtypes`: return the concrete type and the subtypes respectively, associated to an *inheritable* type;
+- `isinheritable`: test whether a type is *inheritable*;
+- `inheritablesubtypes`: return *inheritable subtypes.
+
+Each function and macro has its own online documentation accessible by prepending `?` to the name.
+
 
 ## Complete examples
 
