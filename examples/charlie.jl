@@ -2,8 +2,13 @@
 #                           Charlie's code
 #
 
-# Here I use `Gnuplot.jl` to plot, but any other would work...
+# Here I use `Gnuplot.jl`, but any other package would work...
+#=
 using Gnuplot
+Gnuplot.setverb(false)
+@gp "set size ratio -1" "set grid" "set key bottom right" xr=(-1.5, 2.5) :-
+=#
+
 
 # Methods to plot a Polygon
 plotlabel(p::Polygon) = "Polygon (" * string(length(p.x)) * " vert.)"
@@ -13,17 +18,14 @@ function plot(p::AbstractPolygon; dt=1, color="black")
     x = coords_x(p); x = [x; x[1]]
     y = coords_y(p); y = [y; y[1]]
     title = plotlabel(p)
-    @gp :- x y "w l tit '$title' dt $dt lw 2 lc rgb '$color'"
+    # @gp :- x y "w l tit '$title' dt $dt lw 2 lc rgb '$color'"
 end
-
 
 # Finally, let's have fun with the shapes!
 line = Polygon([0., 1.], [0., 1.])
 triangle = RegularPolygon(3, 1)
 square = Named{RegularPolygon}("Square", 4, 1)
 
-@gp "set size ratio -1" "set grid" "set key bottom right" xr=(-1.5, 2.5) :-
-Gnuplot.setverb(false)
 plot(line, color="black")
 plot(triangle, color="blue")
 plot(square, color="red")
