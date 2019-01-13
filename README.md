@@ -106,13 +106,12 @@ The most striking drawback pops out in the case Alice defines an abstract type w
 The **ReusePatterns.jl** package allows to overtake this limitation by introducing the concept of *quasi abstract* type, i.e. a type without a rigid separation between a type behaviour and its concrete implementation.  Operatively, a *quasi abstract* type is an abstract type satisfying the following constraints:
 
 1 - it can have as many abstract or *quasi abstract* subtypes as desired, but it can have **only one** concrete subtype (the so called *assocated concrete type*);
+
 2 - if a *quasi abstract* type has another *quasi abstract* type among its ancestors, its associated concrete type must have (at least) the same field names and types of the ancestor associated data structure.
 
 Note that for the example discussed above constraint 1 is not an actual limitation, since Alice already defined only one concrete type.  Also note that constraint 2 implies *concrete structure subtyping*.
 
 The `@quasiabstract` macro provided by the **ReusePatterns.jl** package, ensure the above constraints are properly observed.
-
-simply forget about the associated concrete type
 
 The guidelines to exploit *quasi abstract* types are straightforward:
 - define the *quasi abstract* type as a simple structure;

@@ -1,7 +1,7 @@
 #_____________________________________________________________________
 #                            Alice's code
 #
-using Statistics, ForwardCalls
+using Statistics, ReusePatterns
 
 abstract type AbstractPolygon end
 
