@@ -5,7 +5,7 @@
 
 Assume an author **A** (say, Alice) wrote a very powerful Julia code, extensively used by user **C** (say, Charlie).  The best code reusing practice in this "two actors" scenario is the package deployment, thoroughly discussed in the Julia manual.  Now assume a third person **B** (say, Bob) slip between Alice and Charlie: he wish to reuse Alice's code to provide more complex/extended functionalities to Charlie.  Most likely Bob will need a more sophisticated reuse pattern...
 
-This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of two of the most common reuse patterns: *composition* and *subtyping* ([implementation inheritance](https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)) is not supported in Julia), and check which one provides the best solution.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob without modifying the code dealing with Alice's package.
+This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of two of the most common reuse patterns: *composition* and *subtyping* ([implementation inheritance](https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)) is not supported in Julia), and check which one provides the best solution.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob.
 
 The motivation to develop this package stems from the following posts on the Discourse:
 - https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168
@@ -23,7 +23,7 @@ Pkg.develop("https://github.com/gcalderone/ReusePatterns.jl")
 
 ## Composition
 
-With [composition](https://en.wikipedia.org/wiki/Object_composition) we wrap an Alice's object into a structure implemented by Bob, and let Charlie use the latter without even knowing if it actually is the original Alice's object or the Bob's one.
+With [composition](https://en.wikipedia.org/wiki/Object_composition) we wrap an Alice's object into a structure implemented by Bob, and let Charlie use the latter without even knowing if it actually is the original Alice's object or the wrapped one by Bob.
 
 We pursue this goal by automatically forwarding all methods calls from Bob's structure to the appropriate Alice's object.
 
@@ -68,11 +68,11 @@ The key lines here are:
 @forward((PaperBook, :b), Book)
 @forward((Edition, :b), PaperBook)
 ```
-The `@forward` macro identifies all methods accepting a `Book` object, and defines new methods with the same name and arguments, but accepting `PaperBook` arguments in place of the `Book`  ones.  The purpose of each newly defined method is simply to forward the call to the original method, passing the `Book` object stored in the `:p` field.  The second lines do the same job forwarding calls from `Edition` objects to `PaperBook` ones.
+The `@forward` macro identifies all methods accepting a `Book` object, and defines new methods with the same name and arguments, but accepting `PaperBook` arguments in place of the `Book`  ones.  The purpose of each newly defined method is simply to forward the call to the original method, passing the `Book` object stored in the `:p` field.  The second line does the same job, forwarding calls from `Edition` objects to `PaperBook` ones.
 
-The **ReusePatterns.jl** package exports the following functions and macros aimed to support *composition* in Julia:
+The **ReusePatterns.jl** package exports the following functions and macros aimed at supporting *composition* in Julia:
 - `forward`: return a `Vector{String}` with the code to properly forward method calls;
-- `@forward`: forward method calls from an object to a field structure;
+- `@forward`: forward method calls from an object to a field structure.
 
 Continuing the previous example:
 ```
@@ -93,7 +93,7 @@ The *composition* approach has the following advantages:
 ...and disadvantages:
 - It may be cumbersome to apply if the number of involved methods is very high, or if the method definitions are spread across many modules;
 - *composition* is not recursive, i.e. if further users (**D**an, **E**mily, etc.) build composite layers on top of Bob's one they'll need to implement new forwarding methods;
-- It introduces a small overhead for each composition layer, resulting in performance loss;
+- It introduces a small overhead for each composition layer, resulting in performance loss.
 
 
 ## Concrete subtyping
@@ -101,17 +101,17 @@ Julia supports [subtyping](https://en.wikipedia.org/wiki/Subtyping) of abstract 
 
 However, in Julia you can only subtype abstract types, hence this powerful substitutability mechanism can not be pushed beyond a concrete type. Citing the [manual](https://docs.julialang.org/en/v1/manual/types): *this [limitation] might at first seem unduly restrictive, [but] it has many beneficial consequences with surprisingly few drawbacks.*
 
-The most striking drawback pops out in the case Alice defines an abstract type with only one subtype, namely a concrete one.  Clearly, in all methods requiring access to the actual data representation, the argument types will be annotated with the concrete type, not the abstract one.  This is an important protection against Alice's package misuse: those methods require **exactly** that concrete type, not something else, even if it is a subtype of the same parent abstract type.  However, this is a serious problem for Bob, since he can not reuse those methods even if he defines concrete structures with the same contents as Alice's one (plus something else).
+The most striking drawback pops out in case Alice defines an abstract type with only one subtype, namely a concrete one.  Clearly, in all methods requiring access to the actual data representation, the argument types will be annotated with the concrete type, not the abstract one.  This is an important protection against Alice's package misuse: those methods require **exactly** that concrete type, not something else, even if it is a subtype of the same parent abstract type.  However, this is a serious problem for Bob, since he can not reuse those methods even if he defines concrete structures with the same contents as Alice's one (plus something else).
 
 The **ReusePatterns.jl** package allows to overtake this limitation by introducing the concept of *quasi abstract* type, i.e. a type without a rigid separation between a type behaviour and its concrete implementation.  Operatively, a *quasi abstract* type is an abstract type satisfying the following constraints:
 
-1 - it can have as many abstract or *quasi abstract* subtypes as desired, but it can have **only one** concrete subtype (the so called *assocated concrete type*);
+1 - it can have as many abstract or *quasi abstract* subtypes as desired, but it can have **only one** concrete subtype (the so called *associated concrete type*);
 
 2 - if a *quasi abstract* type has another *quasi abstract* type among its ancestors, its associated concrete type must have (at least) the same field names and types of the ancestor associated data structure.
 
 Note that for the example discussed above constraint 1 is not an actual limitation, since Alice already defined only one concrete type.  Also note that constraint 2 implies *concrete structure subtyping*.
 
-The `@quasiabstract` macro provided by the **ReusePatterns.jl** package, ensure the above constraints are properly observed.
+The `@quasiabstract` macro provided by the **ReusePatterns.jl** package, ensure the above constraints are properly satisfied.
 
 The guidelines to exploit *quasi abstract* types are straightforward:
 - define the *quasi abstract* type as a simple structure;
@@ -155,9 +155,9 @@ In a hole in the ground there lived a hobbit...
 ```
 
 
-The **ReusePatterns.jl** package exports the following functions and macros aimed to support *concrete subtyping* in Julia:
+The **ReusePatterns.jl** package exports the following functions and macros aimed at supporting *concrete subtyping* in Julia:
 
-- `@quasiabstract`: define a new *quasi abstract* type, i.e. a pair of an abstract and an (exclusively associated) concrete types;
+- `@quasiabstract`: define a new *quasi abstract* type, i.e. a pair of an abstract and a (exclusively associated) concrete types;
 - `concretetype`: return the concrete type associated to a *quasi abstract* type;
 - `isquasiabstract`: test whether a type is *quasi abstract*;
 - `isquasiconcrete`: test whether a type is the concrete type associated to a *quasi abstract* type.
@@ -184,18 +184,18 @@ This *concrete subtyping* approach has the following advantages:
 - There is no overhead or performance loss.
 
 ...and disadvantages:
-- it is applicable **only if** if both Alice and Bob agrees to use *quasi abstract* types.
-- Charlie may break Alice's or Bob's code by using a concrete type with the *quasi abstract* type as ancestor, but without the required fields.  However, this problem can be easily fixed by adding the following check in the methods accepting a subtyped *quasi abstract* type, e.g. in the `pages` method shown above:
+- it is applicable **only if** both Alice and Bob agree to use *quasi abstract* types.
+- Charlie may break Alice's or Bob's code by using a concrete type with the *quasi abstract* type as ancestor, but without the required fields.  However, this problem can be easily fixed by adding the following check to the methods accepting a *quasi abstract* type, e.g. in the `pages` method shown above:
 ```julia
 function pages(book::PaperBook)
-    @assert isquasiconcretetype(typeof(book))
+    @assert isquasiconcrete(typeof(book))
     book.number_of_pages
 end
 ```
-Note also that `isquasiconcretetype` is a pure function, hence it can be used as a trait.
+Note also that `isquasiconcrete` is a pure function, hence it can be used as a trait.
 
 
-## Complete examples
+## Complete example
 
 
 
