@@ -1,14 +1,6 @@
-#=
-cat composition.jl        | perl -pe 's/#.*\n//; s/^\n//g' | wc
-cat composition_wmacro.jl | perl -pe 's/#.*\n//; s/^\n//g' | wc
-cat subtyping.jl          | perl -pe 's/#.*\n//; s/^\n//g' | wc
-cat subtyping_wmacro.jl   | perl -pe 's/#.*\n//; s/^\n//g' | wc
-=#
-
 #_____________________________________________________________________
 #                           Charlie's code
 #
-
 
 # Here I use `Gnuplot.jl` to plot, but any other would work...
 using Gnuplot

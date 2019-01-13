@@ -198,9 +198,9 @@ Note also that `isquasiconcrete` is a pure function, hence it can be used as a t
 
 ## Complete examples
 
-### Adding metadata to a [DataFrame](https://github.com/JuliaData/DataFrames.jl) object
+### Adding metadata to a `DataFrame` object
 
-This [topic](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168) raised a long discussion about the possibility to extend the functionalities provided by the `DataFrames` package by adding a simple metadata dictionary.  With the *composition* tools provided by **ReusePatterns.jl** this problem can now be solved with just 8 lines of code:
+This [topic](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168) raised a long discussion about the possibility to extend the functionalities provided by the [DataFrame](https://github.com/JuliaData/DataFrames.jl)` package by adding a simple metadata dictionary, and the approaches to follow.  With the *composition* tools provided by **ReusePatterns.jl** this problem can now be solved with just 8 lines of code:
 ```julia
 struct DataFrameMeta <: AbstractDataFrame
     p::DataFrame
@@ -212,6 +212,20 @@ meta(d::DataFrameMeta) = getfield(d,:meta)  # <-- new functionality added to Dat
 @forward((DataFrameMeta, :p), DataFrame)    # <-- reuse all existing functionalities
 ```
 (see the complete example [here](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/dataframes.jl)).
+
+# A comparison of the *composition* and *concrete subtyping* approaches
+
+
+- [*composition*](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/composition.jl)  (without using **ReusePatterns.jl** facilities);
+
+- [*composition*](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/composition_wmacro.jl)  (with **ReusePatterns.jl** facilities);
+
+- [*subtyping*](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/subtyping.jl)  (without using **ReusePatterns.jl** facilities);
+
+- [*subtyping*](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/subtyping_wmacro.jl) (with **ReusePatterns.jl** facilities);
+
+- [Charlie's code](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/charlie.jl) (identical for all of the above) to produce the following plot:
+![polygons](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/polygons.png)
 
 
 
