@@ -379,7 +379,7 @@ true
 julia> isquasiabstract(supertype(typeof(book)))
 true
 
-julia> concretetype(supertype(typeof(book))) === typeof(book)
+julia> concretetype(typeof(book)) === supertype(typeof(book))
 true
 ```
 """

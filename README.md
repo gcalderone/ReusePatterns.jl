@@ -71,17 +71,17 @@ The key lines here are:
 The `@forward` macro identifies all methods accepting a `Book` object, and defines new methods with the same name and arguments, but accepting `PaperBook` arguments in place of the `Book`  ones.  The purpose of each newly defined method is simply to forward the call to the original method, passing the `Book` object stored in the `:p` field.  The second line does the same job, forwarding calls from `Edition` objects to `PaperBook` ones.
 
 The **ReusePatterns.jl** package exports the following functions and macros aimed at supporting *composition* in Julia:
-- `forward`: return a `Vector{String}` with the code to properly forward method calls;
-- `@forward`: forward method calls from an object to a field structure.
+- `@forward`: forward method calls from an object to a field structure;
+- `forward`: returns a `Vector{String}` with the Julia code to properly forward method calls.
 
-Continuing the previous example:
+To preview the forwarding code without actually evaluating it you can use the `forward` function, which has the same syntax as the `@forward` macro.  Continuing from previous example:
 ```
 julia> forward((Edition, :b), PaperBook)
 4-element Array{String,1}:
- "@eval Main Base.:(print)(p1::Main.Edition; kw...) = Main.:(print)(getfield(p1, :b); kw...) # none:1"
- "@eval Main Base.:(show)(p1::IO, p2::Main.Edition; kw...) = Main.:(show)(p1, getfield(p2, :b); kw...) # none:1"
- "@eval Main Main.:(author)(p1::Main.Edition; kw...) = Main.:(author)(getfield(p1, :b); kw...) # none:1"
- "@eval Main Main.:(pages)(p1::Main.Edition; kw...) = Main.:(pages)(getfield(p1, :b); kw...) # REPL[12]:1"
+ "@eval Main Base.:(print)(p1::Main.Edition; kw...) = Main.:(print)(getfield(p1, :b); kw...)"
+ "@eval Main Base.:(show)(p1::IO, p2::Main.Edition; kw...) = Main.:(show)(p1, getfield(p2, :b); kw...)"
+ "@eval Main Main.:(author)(p1::Main.Edition; kw...) = Main.:(author)(getfield(p1, :b); kw...)"
+ "@eval Main Main.:(pages)(p1::Main.Edition; kw...) = Main.:(pages)(getfield(p1, :b); kw...)"
 ```
 
 Each function and macro has its own online documentation accessible by prepending `?` to the name.
@@ -114,8 +114,10 @@ Note that for the example discussed above constraint 1 is not an actual limitati
 The `@quasiabstract` macro provided by the **ReusePatterns.jl** package, ensure the above constraints are properly satisfied.
 
 The guidelines to exploit *quasi abstract* types are straightforward:
-- define the *quasi abstract* type as a simple structure;
-- although two types are actually defined under the hood, you may simply forget about the concrete one, and safely use the abstract one for object creation, method argument annotations, etc.
+- define the *quasi abstract* type as a simple structure, possibly with a parent type;
+- use the *quasi abstract* type name for object creation, method argument annotations, etc.
+
+Finally note that although two types are actually defined under the hood (an abstract and a concrete one), you may simply forget about the concrete one, and safely use the abstract one everywhere in the code.
 
 
 ### Example:
@@ -162,7 +164,7 @@ The **ReusePatterns.jl** package exports the following functions and macros aime
 - `isquasiabstract`: test whether a type is *quasi abstract*;
 - `isquasiconcrete`: test whether a type is the concrete type associated to a *quasi abstract* type.
 
-Continuing the above example:
+Continuing the previous example:
 ```julia
 julia> isquasiconcrete(typeof(book))
 true
@@ -170,17 +172,16 @@ true
 julia> isquasiabstract(supertype(typeof(book)))
 true
 
-julia> concretetype(supertype(typeof(book))) === typeof(book)
+julia> concretetype(typeof(book)) === supertype(typeof(book))
 true
 ```
 
 Each function and macro has its own online documentation accessible by prepending `?` to the name.
 
 
-
 This *concrete subtyping* approach has the following advantages:
 
-- It is a recursive approach, i.e. if further users (**D**an, **E**mily, etc.) subtypes Bob's structure they will have all the inherited behavior for free;
+- It is a recursive approach, i.e. if further users (**D**an, **E**mily, etc.) subtype Bob's structure they will have all the inherited behavior for free;
 - There is no overhead or performance loss.
 
 ...and disadvantages:
