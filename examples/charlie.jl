@@ -1,8 +1,8 @@
 #=
 cat composition.jl        | perl -pe 's/#.*\n//; s/^\n//g' | wc
 cat composition_wmacro.jl | perl -pe 's/#.*\n//; s/^\n//g' | wc
-cat inheritance.jl        | perl -pe 's/#.*\n//; s/^\n//g' | wc
-cat inheritance_wmacro.jl | perl -pe 's/#.*\n//; s/^\n//g' | wc
+cat subtyping.jl          | perl -pe 's/#.*\n//; s/^\n//g' | wc
+cat subtyping_wmacro.jl   | perl -pe 's/#.*\n//; s/^\n//g' | wc
 =#
 
 #_____________________________________________________________________

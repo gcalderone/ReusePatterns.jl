@@ -7,7 +7,7 @@ using Combinatorics
 
 export supertypes, forward, @forward,
     @copy_fields,
-    @inheritable, isinheritable, concretetype, concretesubtypes, inheritablesubtypes
+    @quasiabstract, concretetype, isquasiabstract, isquasiconcrete
 
 
 """
@@ -168,6 +168,39 @@ end
 `@forward(sender, receiver, ekws...)`
 
 Evaluate the Julia code to forward methods.  The syntax is exactly the same as the `forward` function.
+
+# Example:
+```julia-repl
+julia> struct Book
+    title::String
+    author::String
+end
+julia> Base.show(io::IO, b::Book) = println(io, "\$(b.title) (by \$(b.author))")
+julia> Base.print(b::Book) = println("In a hole in the ground there lived a hobbit...")
+julia> author(b::Book) = b.author
+
+julia> struct PaperBook
+    b::Book
+    number_of_pages::Int
+end
+julia> @forward((PaperBook, :b), Book)
+julia> pages(book::PaperBook) = book.number_of_pages
+
+julia> struct Edition
+    b::PaperBook
+    year::Int
+end
+julia> @forward((Edition, :b), PaperBook)
+julia> year(book::Edition) = book.year
+
+julia> book = Edition(PaperBook(Book("The Hobbit", "J.R.R. Tolkien"), 374), 2013)
+
+julia> print(author(book), ", ", pages(book), " pages, Ed. ", year(book))
+J.R.R. Tolkien, 374 pages, Ed. 2013
+
+julia> print(book)
+In a hole in the ground there lived a hobbit...
+```
 """
 macro forward(sender, receiver, ekws...)
     kws = Vector{Pair{Symbol,Any}}()
@@ -245,87 +278,112 @@ end
 """
 `concretetype(T::Type)`
 
-Return the concrete type associated with the *inheritable* abstract type `T`. If `T` is not *inheritable* returns nothing.
+Return the concrete type associated with the *quasi abstract* type `T`. If `T` is not *quasi abstract* returns nothing.
 
-See also: `@inheritable`
+See also: `@quasiabstract`
 """
 concretetype(T::Type) = nothing
 
 
 """
-`concretesubtypes(T::Type)`
+`isquasiabstract(T::Type)`
 
-Return a vector whose elements are the concrete types associated with the *inheritable* subtypes of `T`.  If there are no such types returns nothing.
+Return `true` if `T` is *quasi abstract*, `false` otherwise.
 
-See also: `@inheritable`
+See also: `@quasiabstract`
 """
-concretesubtypes(T::Type) = something([concretetype(a) for a in subtypes(T)]...)
-
-
-"""
-`inheritablesubtypes(T::Type)`
-
-Return a vector whose elements are the *inheritable* subtypes of `T`.  If there are no such types returns an empty vector.
-
-See also: `@inheritable`
-"""
-inheritablesubtypes(T::Type) = filter(isinheritable, subtypes(T))
+isquasiabstract(T::Type) = false
 
 
 """
-`isinheritable(T::Type)`
+`isquasiconcrete(T::Type)`
 
-Return `true` if the the abstract type `T` is *inheritable*, `false` otherwise.
+Return `true` if `T` is a concrete type associated to a *quasi abstract* type, `false` otherwise.
 
-See also: `@inheritable`
+See also: `@quasiabstract`
 """
-isinheritable(T::Type) = false
+isquasiconcrete(T::Type) = false
+
+
+#  """
+#  `concretesubtypes(T::Type)`
+#  
+#  Return a vector whose elements are the concrete types associated with the *quasi abstract* subtypes of `T`.  If there are no such types returns nothing.
+#  
+#  See also: `@quasiabstract`
+#  """
+#  concretesubtypes(T::Type) = something([concretetype(a) for a in subtypes(T)]...)
+#  
+#  
+#  """
+#  `quasiabstractsubtypes(T::Type)`
+#  
+#  Return a vector whose elements are the *quasi abstract* subtypes of `T`.  If there are no such types returns an empty vector.
+#  
+#  See also: `@quasiabstract`
+#  """
+#  quasiabstractsubtypes(T::Type) = filter(isquasiabstract, subtypes(T))
+
+
 
 
 """
-`@inheritable expression`
+`@quasiabstract expression`
 
-Create an *inheritable* structure definition.
+Create a *quasi abstract* type.
 
 This macro accepts an expression defining a (mutable or immutable) structure, and outputs the code for two new type definitions:
 - an abstract type with the same name and (if given) supertype of the input structure;
 - a concrete structure definition with name prefix `Concrete_`, subtyping the abstract type defined above.
 
-The relation between the types ensure there will be a single concrete type associated to the abstract one, hence you can use the abstract type to annotate method arguments, and be sure to receive the associated concrete type, or one of its subtypes (which shares all field names and types of the ancestor).
+The relation between the types ensure there will be a single concrete type associated to the abstract one, hence you can use the abstract type to annotate method arguments, and be sure to receive the associated concrete type, or one of its subtypes (which shares all field names and types of the ancestors).
 
-The concrete type associated to an *inheritable* abstract type can be retrieved with the `concretetype` function.  The `Concrete_` prefix can be customized passing a second symbol argument to the macro.
+The concrete type associated to an *quasi abstract* type can be retrieved with the `concretetype` function.  The `Concrete_` prefix can be customized passing a second symbol argument to the macro.
 
-These newly defined types allows to easily implement single inheritance in Julia: simply use the abstract type name for both object construction and to annotate method arguments.  
+These newly defined types allows to easily implement concrete subtyping: simply use the *quasi abstract* type name for both object construction and to annotate method arguments.  
 
 # Example:
 ```julia-repl
-julia> @inheritable struct Bird
-    weight::Float64
+julia> @quasiabstract struct Book
+    title::String
+    author::String
 end
+julia> Base.show(io::IO, b::Book) = println(io, "\$(b.title) (by \$(b.author))")
+julia> Base.print(b::Book) = println("In a hole in the ground there lived a hobbit...")
+julia> author(b::Book) = b.author
 
-julia> fly(b::Bird) = "Flying..."
-julia> weight(b::Bird) = b.weight
-
-julia> @inheritable struct Duck <: Bird
-    color::String
+julia> @quasiabstract struct PaperBook <: Book
+    number_of_pages::Int
 end
+julia> pages(book::PaperBook) = book.number_of_pages
 
-julia> quack(d::Duck) = "Quack!!!"
+julia> @quasiabstract struct Edition <: PaperBook
+    year::Int
+end
+julia> year(book::Edition) = book.year
 
-julia> println(fieldnames(concretetype(Duck)))
-(:weight, :color)
+julia> println(fieldnames(concretetype(Edition)))
+(:title, :author, :number_of_pages, :year)
 
-julia> duck = Duck(1.0, "Brown")
-Concrete_Duck(1.0, "Brown")
+julia> book = Edition("The Hobbit", "J.R.R. Tolkien", 374, 2013)
 
-julia> fly(duck)
-"Flying..."
+julia> print(author(book), ", ", pages(book), " pages, Ed. ", year(book))
+J.R.R. Tolkien, 374 pages, Ed. 2013
 
-julia> quack(duck)
-"Quack!!!"
+julia> print(book)
+In a hole in the ground there lived a hobbit...
+
+julia> isquasiconcrete(typeof(book))
+true
+
+julia> isquasiabstract(supertype(typeof(book)))
+true
+
+julia> concretetype(supertype(typeof(book))) === typeof(book)
+true
 ```
 """
-macro inheritable(expr, prefix=:Concrete_)
+macro quasiabstract(expr, prefix=:Concrete_)
     function change_symbol!(expr, from::Symbol, to::Symbol)
         if isa(expr, Expr)
             for i in 1:length(expr.args)
@@ -385,16 +443,22 @@ macro inheritable(expr, prefix=:Concrete_)
     deleteat!(expr.args[2].args, 2)
     insert!(  expr.args[2].args, 2, name)
 
-    # If super type is inheritable retrieve the associated concrete
-    # type and add its fields as members
-    parent = concretetype(__module__.eval(super))
-    if parent != nothing
-        for i in fieldcount(parent):-1:1
-            e = Expr(Symbol("::"))
-            push!(e.args, fieldname(parent, i))
-            push!(e.args, fieldtype(parent, i))
-            pushfirst!(expr.args[3].args, e)
+    # If an ancestor type is quasi abstract retrieve the associated
+    # concrete type and add its fields as members
+    p = __module__.eval(super)
+    println(typeof(p))
+    while (p != Any)
+        if isquasiabstract(p)
+            parent = concretetype(p)
+            for i in fieldcount(parent):-1:1
+                e = Expr(Symbol("::"))
+                push!(e.args, fieldname(parent, i))
+                push!(e.args, fieldtype(parent, i))
+                pushfirst!(expr.args[3].args, e)
+            end
+            break
         end
+        p = __module__.eval(supertype(p))
     end
 
     # Add modified input structure to output
@@ -403,9 +467,10 @@ macro inheritable(expr, prefix=:Concrete_)
     # Add a constructor whose name is the same as the abstract type
     push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
 
-    # Add `concretetype` and `isinheritable` methods
+    # Add `concretetype`, `isquasiabstract` and `isquasiconcrete` methods
     push!(out.args, :(ReusePatterns.concretetype(::Type{$name}) = $concrete))
-    push!(out.args, :(ReusePatterns.isinheritable(::Type{$name}) = true))
+    push!(out.args, :(ReusePatterns.isquasiabstract(::Type{$name}) = true))
+    push!(out.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete}) = true))
     
     return esc(out)
 end

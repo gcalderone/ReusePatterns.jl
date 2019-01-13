@@ -1,16 +1,16 @@
 #_____________________________________________________________________
 #                            Alice's code
 #
-using Statistics, ForwardCalls
+using Statistics, ReusePatterns
 
 abstract type AbstractPolygon end
 
-abstract type Polygon <: AbstractPolygon end
-mutable struct Concrete_Polygon <: Polygon
+
+@quasiabstract mutable struct Polygon <: AbstractPolygon
     x::Vector{Float64}
     y::Vector{Float64}
 end
-Polygon(args...; kw...) = Concrete_Polygon(args...; kw...)
+
 
 # Retrieve the number of vertices, and their X and Y coordinates
 vertices(p::Polygon) = length(p.x)
@@ -41,13 +41,13 @@ end
 #_____________________________________________________________________
 #                             Bob's code
 #
-abstract type RegularPolygon <: Polygon end
-mutable struct Concrete_RegularPolygon <: RegularPolygon
-    x::Vector{Float64}
-    y::Vector{Float64}
+
+@quasiabstract mutable struct RegularPolygon <: Polygon
+
+
     radius::Float64
 end
-RegularPolygon(args...; kw...) = Concrete_RegularPolygon(args...; kw...)
+
 
 function RegularPolygon(n::Integer, radius::Real)
     @assert n >= 3
