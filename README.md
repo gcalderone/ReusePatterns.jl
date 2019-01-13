@@ -196,7 +196,22 @@ end
 Note also that `isquasiconcrete` is a pure function, hence it can be used as a trait.
 
 
-## Complete example
+## Complete examples
+
+### Adding metadata to a [DataFrame](https://github.com/JuliaData/DataFrames.jl) object
+
+This [topic](https://discourse.julialang.org/t/how-to-add-metadata-info-to-a-dataframe/11168) raised a long discussion about the possibility to extend the functionalities provided by the `DataFrames` package by adding a simple metadata dictionary.  With the *composition* tools provided by **ReusePatterns.jl** this problem can now be solved with just 8 lines of code:
+```julia
+struct DataFrameMeta <: AbstractDataFrame
+    p::DataFrame
+    meta::Dict{String, Any}
+    DataFrameMeta(args...; kw...) = new(DataFrame(args...; kw...), Dict{Symbol, Any}())
+    DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
+end
+meta(d::DataFrameMeta) = getfield(d,:meta)  # <-- new functionality added to DataFrameMeta
+@forward((DataFrameMeta, :p), DataFrame)    # <-- reuse all existing functionalities
+```
+(see the complete example [here](https://github.com/gcalderone/ReusePatterns.jl/blob/master/examples/dataframes.jl)).
 
 
 
