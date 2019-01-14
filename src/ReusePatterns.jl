@@ -446,7 +446,6 @@ macro quasiabstract(expr, prefix=:Concrete_)
     # If an ancestor type is quasi abstract retrieve the associated
     # concrete type and add its fields as members
     p = __module__.eval(super)
-    println(typeof(p))
     while (p != Any)
         if isquasiabstract(p)
             parent = concretetype(p)
