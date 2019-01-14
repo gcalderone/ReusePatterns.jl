@@ -225,7 +225,7 @@ The objects and methods implemented by Alice are:
 The objects and methods implemented by Bob are:
 - `RegularPolygon`: a structure including (in the *composition* case) or subtyping (in the *concrete subtyping* case) a `Polygon` object, and represeting a **regular polygon**;
 - `side`, `area`: methods to caluclate the length of a side and the area of a regular polygon;
-- `Named`: a generic wrapper for an object (either a `Polygon`, or `RegPolygon`), providing the possibility to attach a label for plotting purposes.
+- `Named`: a generic wrapper for an object (either a `Polygon`, or `RegularPolygon`), providing the possibility to attach a label for plotting purposes.
 
 Finally, Charlie's code will:
 - Instantiate several regular polygons;
