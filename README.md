@@ -17,8 +17,7 @@ but several other topics apply as well (see list in the *Links* section below).
 ## Installation
 The **ReusePatterns.jl** package is currently under testing, hence you may download the development version with:
 ```julia
-using Pkg
-Pkg.develop("https://github.com/gcalderone/ReusePatterns.jl")
+] add ReusePatterns
 ```
 
 ## Composition
