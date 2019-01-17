@@ -95,12 +95,12 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
     sender_type = string(parentmodule(sender[1])) * "." * string(nameof(sender[1]))
     sender_symb = string(sender[2])
     code = Vector{String}()
-    
+
     # Seacrh for receiver type in method arguments
     foundat = Vector{Int}()
     for i in 2:method.nargs
         argtype = fieldtype(method.sig, i)
-        (sender[1] == argtype)  &&  (return code)            
+        (sender[1] == argtype)  &&  (return code)
         if argtype != Any
             (typeintersect(receiver, argtype) != Union{})  &&  (push!(foundat, i-1))
         end
@@ -307,19 +307,19 @@ isquasiconcrete(T::Type) = false
 
 #  """
 #  `concretesubtypes(T::Type)`
-#  
+#
 #  Return a vector whose elements are the concrete types associated with the *quasi abstract* subtypes of `T`.  If there are no such types returns nothing.
-#  
+#
 #  See also: `@quasiabstract`
 #  """
 #  concretesubtypes(T::Type) = something([concretetype(a) for a in subtypes(T)]...)
-#  
-#  
+#
+#
 #  """
 #  `quasiabstractsubtypes(T::Type)`
-#  
+#
 #  Return a vector whose elements are the *quasi abstract* subtypes of `T`.  If there are no such types returns an empty vector.
-#  
+#
 #  See also: `@quasiabstract`
 #  """
 #  quasiabstractsubtypes(T::Type) = filter(isquasiabstract, subtypes(T))
@@ -340,7 +340,7 @@ The relation between the types ensure there will be a single concrete type assoc
 
 The concrete type associated to an *quasi abstract* type can be retrieved with the `concretetype` function.  The `Concrete_` prefix can be customized passing a second symbol argument to the macro.
 
-These newly defined types allows to easily implement concrete subtyping: simply use the *quasi abstract* type name for both object construction and to annotate method arguments.  
+These newly defined types allows to easily implement concrete subtyping: simply use the *quasi abstract* type name for both object construction and to annotate method arguments.
 
 # Example:
 ```julia-repl
@@ -437,7 +437,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
         concrete = deepcopy(name)
         change_symbol!(concrete, name_symb, concrete_symb)
     end
-    change_symbol!(expr    , name_symb, concrete_symb)
+    change_symbol!(expr, name_symb, concrete_symb)
 
     # Change super type in input expression to actual name
     deleteat!(expr.args[2].args, 2)
@@ -464,13 +464,51 @@ macro quasiabstract(expr, prefix=:Concrete_)
     push!(out.args, expr)
 
     # Add a constructor whose name is the same as the abstract type
-    push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
+    if isa(name, Expr)
+        @assert name.head == :curly
+        whereclause = Expr(:where)
+        push!(whereclause.args, :($name(args...; kw...)))
+        for i in 2:length(name.args)
+            @assert isa(name.args[i], Symbol)
+            push!(whereclause.args, name.args[i])
+        end
+        push!(out.args, :($whereclause = $concrete(args...; kw...)))
+    else
+        push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
+    end
 
     # Add `concretetype`, `isquasiabstract` and `isquasiconcrete` methods
-    push!(out.args, :(ReusePatterns.concretetype(::Type{$name}) = $concrete))
-    push!(out.args, :(ReusePatterns.isquasiabstract(::Type{$name}) = true))
-    push!(out.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete}) = true))
-    
+    push!(out.args, :(ReusePatterns.concretetype(::Type{$name_symb}) = $concrete_symb))
+    push!(out.args, :(ReusePatterns.isquasiabstract(::Type{$name_symb}) = true))
+    push!(out.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete_symb}) = true))
+
+    if isa(name, Expr)
+        @assert name.head == :curly
+        whereclause = Expr(:where)
+        push!(whereclause.args, :(ReusePatterns.concretetype(::Type{$name})))
+        for i in 2:length(name.args)
+            @assert isa(name.args[i], Symbol)
+            push!(whereclause.args, name.args[i])
+        end
+        push!(out.args, :($whereclause = $concrete))
+
+        whereclause = Expr(:where)
+        push!(whereclause.args, :(ReusePatterns.isquasiabstract(::Type{$name})))
+        for i in 2:length(name.args)
+            @assert isa(name.args[i], Symbol)
+            push!(whereclause.args, name.args[i])
+        end
+        push!(out.args, :($whereclause = true))
+
+        whereclause = Expr(:where)
+        push!(whereclause.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete})))
+        for i in 2:length(name.args)
+            @assert isa(name.args[i], Symbol)
+            push!(whereclause.args, name.args[i])
+        end
+        push!(out.args, :($whereclause = true))
+    end
+
     return esc(out)
 end
 
