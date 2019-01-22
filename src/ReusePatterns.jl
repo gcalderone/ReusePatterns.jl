@@ -397,7 +397,28 @@ macro quasiabstract(expr, prefix=:Concrete_)
             end
         end
     end
-
+    drop_parameter_types(expr::Symbol) = expr
+    function drop_parameter_types(_aaa::Expr)
+        aaa = deepcopy(_aaa)
+        for ii in 1:length(aaa.args)
+            if isa(aaa.args[ii], Expr)  &&  (aaa.args[ii].head == :<:)
+                insert!(aaa.args, ii, aaa.args[ii].args[1])
+                deleteat!(aaa.args, ii+1)
+            end
+        end
+        return aaa
+    end
+    function prepare_where(expr::Expr, orig::Expr)
+        @assert expr.head == :curly
+        whereclause = Expr(:where)
+        push!(whereclause.args, orig)
+        for i in 2:length(expr.args)
+            @assert (isa(expr.args[i], Symbol)  ||  (isa(expr.args[i], Expr)  &&  (expr.args[i].head == :<:)))
+            push!(whereclause.args, expr.args[i])
+        end
+        return whereclause
+    end
+               
     @assert isa(expr, Expr)
     @assert expr.head == :struct "Expression must be a `struct`"
 
@@ -407,7 +428,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
         deleteat!(expr.args, 2)
         insert!(expr.args, 2, Expr(:<:, name, :Any))
     end
-    if isa(expr.args[2], Expr)  &&  (expr.args[2].head == :curly)
+    if isa(expr.args[2], Expr)  &&  (expr.args[2].head != :<:)
         insert!(expr.args, 2, Expr(:<:, expr.args[2], :Any))
         deleteat!(expr.args, 3)
     end
@@ -428,7 +449,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
     # Output abstract type
     out = Expr(:block)
     push!(out.args, :(abstract type $name <: $super end))
-
+    
     # Change name in input expression
     concrete_symb = Symbol(prefix, name_symb)
     if isa(name, Symbol)
@@ -439,13 +460,16 @@ macro quasiabstract(expr, prefix=:Concrete_)
     end
     change_symbol!(expr, name_symb, concrete_symb)
 
+    # Drop all types from parameters in `name`, or they'll raise syntax errors
+    name = drop_parameter_types(name)
+
     # Change super type in input expression to actual name
     deleteat!(expr.args[2].args, 2)
     insert!(  expr.args[2].args, 2, name)
 
     # If an ancestor type is quasi abstract retrieve the associated
     # concrete type and add its fields as members
-    p = __module__.eval(super)
+    p = __module__.eval(super_symb)
     while (p != Any)
         if isquasiabstract(p)
             parent = concretetype(p)
@@ -465,13 +489,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
 
     # Add a constructor whose name is the same as the abstract type
     if isa(name, Expr)
-        @assert name.head == :curly
-        whereclause = Expr(:where)
-        push!(whereclause.args, :($name(args...; kw...)))
-        for i in 2:length(name.args)
-            @assert isa(name.args[i], Symbol)
-            push!(whereclause.args, name.args[i])
-        end
+        whereclause = prepare_where(name, :($name(args...; kw...)))
         push!(out.args, :($whereclause = $concrete(args...; kw...)))
     else
         push!(out.args, :($name(args...; kw...) = $concrete(args...; kw...)))
@@ -483,32 +501,18 @@ macro quasiabstract(expr, prefix=:Concrete_)
     push!(out.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete_symb}) = true))
 
     if isa(name, Expr)
-        @assert name.head == :curly
-        whereclause = Expr(:where)
-        push!(whereclause.args, :(ReusePatterns.concretetype(::Type{$name})))
-        for i in 2:length(name.args)
-            @assert isa(name.args[i], Symbol)
-            push!(whereclause.args, name.args[i])
-        end
+        whereclause = prepare_where(name, :(ReusePatterns.concretetype(::Type{$name})))
         push!(out.args, :($whereclause = $concrete))
 
-        whereclause = Expr(:where)
-        push!(whereclause.args, :(ReusePatterns.isquasiabstract(::Type{$name})))
-        for i in 2:length(name.args)
-            @assert isa(name.args[i], Symbol)
-            push!(whereclause.args, name.args[i])
-        end
+        whereclause = prepare_where(name, :(ReusePatterns.isquasiabstract(::Type{$name})))
         push!(out.args, :($whereclause = true))
 
-        whereclause = Expr(:where)
-        push!(whereclause.args, :(ReusePatterns.isquasiconcrete(::Type{$concrete})))
-        for i in 2:length(name.args)
-            @assert isa(name.args[i], Symbol)
-            push!(whereclause.args, name.args[i])
-        end
+        # Drop all types from parameters in `concrete`, or they'll raise syntax errors
+        concrete = drop_parameter_types(concrete)
+
+        whereclause = prepare_where(name, :(ReusePatterns.isquasiconcrete(::Type{$concrete})))
         push!(out.args, :($whereclause = true))
     end
-
     return esc(out)
 end
 

@@ -11,6 +11,46 @@ supertypes(Union{Type,UnionAll,DataType})
 supertypes(Tuple{Int,Int})
 
 
+@quasiabstract struct Rectangle1
+    width::Real 
+    height::Real
+end
+
+@quasiabstract struct Rectangle2{T<:Real}
+    width::T
+    height::T 
+end
+
+@quasiabstract struct Rectangle3{T} <: Number
+    width::T
+    height::T 
+end
+
+@quasiabstract struct Rectangle4{T<:Real} <: Number
+    width::T
+    height::T 
+end
+
+
+@quasiabstract struct Box1 <: Rectangle1
+    depth::Real 
+end
+
+@quasiabstract struct Box2{T<:Real} <: Rectangle2{T}
+    depth::T
+end
+
+@quasiabstract struct Box3{T} <: Rectangle3{T}
+    depth::T 
+end
+
+@quasiabstract struct Box4{T<:Real} <: Rectangle4{T}
+    depth::T 
+end
+
+
+
+
 #_____________________________________________________________________
 #                            Alice's code
 #

@@ -5,7 +5,7 @@
 # Here I use `Gnuplot.jl`, but any other package would work...
 #=
 using Gnuplot
-Gnuplot.setverb(false)
+setverbose(false)
 @gp "set size ratio -1" "set grid" "set key bottom right" xr=(-1.5, 2.5) :-
 =#
 
