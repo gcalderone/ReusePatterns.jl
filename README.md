@@ -272,10 +272,9 @@ The topics mentioned here, or related ones, have been thorougly discussed in man
 Also, there are several packages related to the code reuse topic, or which provide similar functionalities as **ReusePatterns.jl** (in no particolar order):
 
 - https://github.com/WschW/StructuralInheritance.jl
-- https://github.com/JuliaArbTypes/TypedDelegation.jl
+- https://github.com/JeffreySarnoff/TypedDelegation.jl
 - https://github.com/AleMorales/ModularTypes.jl
 - https://github.com/JuliaCollections/DataStructures.jl/blob/master/src/delegate.jl
-- https://github.com/Jeffrey-Sarnoff/Delegate.jl
 - https://github.com/rjplevin/Classes.jl
 - https://github.com/jasonmorton/Typeclass.jl
 - https://github.com/KlausC/TypeEmulator.jl
