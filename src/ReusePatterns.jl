@@ -442,9 +442,9 @@ macro quasiabstract(expr, prefix=:Concrete_)
     name_symb = (isa(tmp, Symbol)  ?  tmp  :  tmp.args[1])
 
     tmp = expr.args[2].args[2]
-    @assert (isa(tmp, Symbol)  ||  (isa(tmp, Expr)  &&  (tmp.head == :curly)))
+    @assert (isa(tmp, Symbol)  ||  (isa(tmp, Expr)  &&  ((tmp.head == :curly) || (tmp.head == :(.)))))
     super = deepcopy(tmp)
-    super_symb = (isa(tmp, Symbol)  ?  tmp  :  tmp.args[1])
+    super_symb = ((isa(tmp, Expr)  &&  (tmp.head == :curly))  ?  tmp.args[1]  :  tmp)
 
     # Output abstract type
     out = Expr(:block)
