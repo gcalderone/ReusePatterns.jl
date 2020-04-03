@@ -3,11 +3,9 @@
 #
 
 # Here I use `Gnuplot.jl`, but any other package would work...
-#=
+
 using Gnuplot
-setverbose(false)
 @gp "set size ratio -1" "set grid" "set key bottom right" xr=(-1.5, 2.5) :-
-=#
 
 
 # Methods to plot a Polygon
@@ -18,7 +16,7 @@ function plot(p::AbstractPolygon; dt=1, color="black")
     x = coords_x(p); x = [x; x[1]]
     y = coords_y(p); y = [y; y[1]]
     title = plotlabel(p)
-    # @gp :- x y "w l tit '$title' dt $dt lw 2 lc rgb '$color'"
+    @gp :- x y "w l tit '$title' dt $dt lw 2 lc rgb '$color'"
 end
 
 # Finally, let's have fun with the shapes!
