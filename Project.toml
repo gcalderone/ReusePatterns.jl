@@ -1,0 +1,7 @@
+name = "ReusePatterns"
+uuid = "3085a5ce-16d9-4b44-90ef-96d726b4279d"
+authors = ["Giorgio Calderone <giorgio.calderone@gmail.com>"]
+version = "0.2.0"
+
+[deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
