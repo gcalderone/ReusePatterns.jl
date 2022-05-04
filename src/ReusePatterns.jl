@@ -123,7 +123,7 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type; kw...)
     for m in methodswith(receiver, supertypes=true)
         append!(code, forward(sender, receiver, m; kw...))
     end
-    return code
+    return unique(code)
 end
 
 """
