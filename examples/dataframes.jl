@@ -17,14 +17,15 @@ dump(df1)
 dump(df2)
 describe(df2)
 first(df1, 10)
-df1[:A] + df2[:C]
+df1[:, :A] .+ df2[:, :C]
 df1[1:4, 1:2]
-df1[[:A,:C]]
-df1[1:2, [:A,:C]]
 df1[:, [:A,:C]]
+df1[1:2, [:A,:C]]
 df1[:, [1,3]]
 df1[1:4, :]
 df1[1:4, :C]
 df1[1:4, :C] = 40. * df1[1:4, :C]
 [df1; df2]
 size(df1)
+meta(df1)["key"] = :value
+meta(df1)["key"]

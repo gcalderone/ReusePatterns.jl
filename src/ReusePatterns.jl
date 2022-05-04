@@ -76,9 +76,14 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             s = s[1:argid[end]]
             push!(s, "args...")
         end
-        m = string(method.module.eval(:(parentmodule($(method.name))))) * "."
+        str = string(method.module) * ".eval(:(parentmodule($(method.name))))"
+        try
+            m = string(method.module.eval(:(parentmodule($(method.name))))) * "."
+        catch err
+            @warn "Can't forward method $(method.name) since the following line raises an error: $str"
+            return ""
+        end
         l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
-
         m = string(method.module) * "."
         l *= ") = $m:(" * string(method.name) * ")("
         s = "p" .* string.(1:method.nargs-1)
@@ -216,11 +221,11 @@ macro forward(sender, receiver, ekws...)
     out = quote
         counterr = 0
         if $methods == nothing
-            list = forward($sender, $receiver; $kws...)
+            mylist = forward($sender, $receiver; $kws...)
         else
-            list = forward($sender, $receiver, $methods; $kws...)
+            mylist = forward($sender, $receiver, $methods; $kws...)
         end
-        for line in list
+        for line in mylist
             try
                 eval(Meta.parse("$line"))
             catch err
@@ -230,7 +235,7 @@ macro forward(sender, receiver, ekws...)
                 @error err;
             end
         end
-        println(length(list) - counterr, " method(s) forwarded")
+        println(length(mylist) - counterr, " method(s) forwarded")
         if counterr > 0
             println(counterr, " method(s) raised an error")
         end
@@ -418,7 +423,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
         end
         return whereclause
     end
-               
+
     @assert isa(expr, Expr)
     @assert expr.head == :struct "Expression must be a `struct`"
 
@@ -449,7 +454,7 @@ macro quasiabstract(expr, prefix=:Concrete_)
     # Output abstract type
     out = Expr(:block)
     push!(out.args, :(abstract type $name <: $super end))
-    
+
     # Change name in input expression
     concrete_symb = Symbol(prefix, name_symb)
     if isa(name, Symbol)
