@@ -5,31 +5,10 @@ using Combinatorics
 # TODO
 # - forward macro calls
 
-export supertypes, forward, @forward,
+export forward, @forward,
     @copy_fields,
     @quasiabstract, concretetype, isquasiabstract, isquasiconcrete
 
-
-"""
-`supertypes(T::Type)`
-
-Returns a vector with all supertypes of type `T` (excluding `Any`).
-
-# Example
-```julia-repl
-julia> println(supertypes(Int))
-Type[Signed, Integer, Real, Number]
-```
-"""
-function supertypes(T::Type)::Vector{Type}
-    out = Vector{Type}()
-    st = supertype(T)
-    if st != Any
-        push!(out, st)
-        push!(out, supertypes(st)...)
-    end
-    return out
-end
 
 
 """
@@ -39,9 +18,9 @@ Return a `Vector{String}` containing the Julia code to properly forward `method`
 
 The `sender` tuple must contain a structure type, and a symbol with the name of one of its fields.
 
-The `withtypes` keyword controls whether the forwarding method has type annotated arguments.  The `allargs` keyword controls wether all arguments should be used, or just the first ones up to the last containing the `receiver` type.
+The `withtypes` keyword controls whether the forwarding method has type annotated arguments.  The `allargs` keyword controls whether all arguments should be used, or just the first ones up to the last containing the `receiver` type.
 
-Both keywords are `true` by defult, but they can be set to `false` to decrease the number of forwarding methods.
+Both keywords are `true` by default, but they can be set to `false` to decrease the number of forwarded methods.
 
 # Example:
 Implement a wrapper for an `Int` object, and forward the `+` method accepting `Int`:
@@ -97,11 +76,13 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         return l
     end
 
+    @assert isstructtype(sender[1])
+    @assert sender[2] in fieldnames(sender[1])
     sender_type = string(parentmodule(sender[1])) * "." * string(nameof(sender[1]))
     sender_symb = string(sender[2])
     code = Vector{String}()
 
-    # Seacrh for receiver type in method arguments
+    # Search for receiver type in method arguments
     foundat = Vector{Int}()
     for i in 2:method.nargs
         argtype = fieldtype(method.sig, i)
@@ -135,38 +116,14 @@ end
 
 
 """
-`forward(sender::Tuple{Type,Symbol}, receiver::Type, methods::Vector{Method}; kw...)`
+`forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)`
 """
-function forward(sender::Tuple{Type,Symbol}, receiver::Type, methods::Vector{Method}; kw...)
+function forward(sender::Tuple{Type,Symbol}, receiver::Type; kw...)
     code = Vector{String}()
-    for m in methods
+    for m in methodswith(receiver, supertypes=true)
         append!(code, forward(sender, receiver, m; kw...))
     end
-    code = unique(code)
     return code
-end
-
-"""
-`forward(sender::Tuple{Type,Symbol}, receivers::Vector{T}, methods; kw...)`
-"""
-function forward(sender::Tuple{Type,Symbol}, receivers::Vector{T}, methods; kw...) where T <: Type
-    code = Vector{String}()
-    for t in receivers
-        append!(code, forward(sender, t, methods; kw...))
-    end
-    code = unique(code)
-    return code
-end
-
-"""
-`forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)`
-
-Wrapper for `forward(send, receiver, supertypes(receiver, super=super); kw...)`
-"""
-function forward(sender::Tuple{Type,Symbol}, receiver::Type; super=true, kw...)
-    tt = [receiver]
-    (super)  &&  (append!(tt, supertypes(receiver)))
-    return forward(sender, tt, methodswith(receiver, supertypes=super); kw...)
 end
 
 """
@@ -209,22 +166,17 @@ In a hole in the ground there lived a hobbit...
 """
 macro forward(sender, receiver, ekws...)
     kws = Vector{Pair{Symbol,Any}}()
-    methods = nothing
     for kw in ekws
         if isa(kw, Expr)  &&  (kw.head == :(=))
             push!(kws, Pair(kw.args[1], kw.args[2]))
         else
-            @assert methods == nothing "Too many arguments"
-            methods = kw
+            error("The @forward macro accepts two arguments and the withtypes=, allargs= keywords")
         end
     end
+
     out = quote
         counterr = 0
-        if $methods == nothing
-            mylist = forward($sender, $receiver; $kws...)
-        else
-            mylist = forward($sender, $receiver, $methods; $kws...)
-        end
+        mylist = forward($sender, $receiver; $kws...)
         for line in mylist
             try
                 eval(Meta.parse("$line"))
@@ -308,27 +260,6 @@ Return `true` if `T` is a concrete type associated to a *quasi abstract* type, `
 See also: `@quasiabstract`
 """
 isquasiconcrete(T::Type) = false
-
-
-#  """
-#  `concretesubtypes(T::Type)`
-#
-#  Return a vector whose elements are the concrete types associated with the *quasi abstract* subtypes of `T`.  If there are no such types returns nothing.
-#
-#  See also: `@quasiabstract`
-#  """
-#  concretesubtypes(T::Type) = something([concretetype(a) for a in subtypes(T)]...)
-#
-#
-#  """
-#  `quasiabstractsubtypes(T::Type)`
-#
-#  Return a vector whose elements are the *quasi abstract* subtypes of `T`.  If there are no such types returns an empty vector.
-#
-#  See also: `@quasiabstract`
-#  """
-#  quasiabstractsubtypes(T::Type) = filter(isquasiabstract, subtypes(T))
-
 
 
 
