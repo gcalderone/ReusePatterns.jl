@@ -232,6 +232,7 @@ macro copy_fields(T)
 end
 
 
+# New methods for the following functions will be implemented when the @quasiabstract macro is invoked
 """
 `concretetype(T::Type)`
 
@@ -309,17 +310,14 @@ J.R.R. Tolkien, 374 pages, Ed. 2013
 julia> print(book)
 In a hole in the ground there lived a hobbit...
 
-julia> isquasiconcrete(typeof(book))
-true
+julia> @assert isquasiconcrete(typeof(book))
 
-julia> isquasiabstract(supertype(typeof(book)))
-true
+julia> @assert isquasiabstract(supertype(typeof(book)))
 
-julia> concretetype(typeof(book)) === supertype(typeof(book))
-true
+julia> @assert concretetype(supertype(typeof(book))) === typeof(book)
 ```
 """
-macro quasiabstract(expr, prefix=:Concrete_)
+macro quasiabstract(expr, prefix::Symbol=:Concrete_)
     function change_symbol!(expr, from::Symbol, to::Symbol)
         if isa(expr, Expr)
             for i in 1:length(expr.args)
