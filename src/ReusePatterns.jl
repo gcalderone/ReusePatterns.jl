@@ -2,9 +2,6 @@ module ReusePatterns
 using InteractiveUtils
 using Combinatorics
 
-# TODO
-# - forward macro calls
-
 export forward, @forward,
     @copy_fields,
     @quasiabstract, concretetype, isquasiabstract, isquasiconcrete
@@ -97,7 +94,7 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
     end
     (length(foundat) == 0)  &&  (return code)
     if string(method.name)[1] == '@'
-        @warn "Forwarding macros is not yet supported."
+        @warn "Forwarding macros is not yet supported."  # TODO
         display(method)
         println()
         return code
