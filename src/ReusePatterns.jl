@@ -55,13 +55,17 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             s = s[1:argid[end]]
             push!(s, "args...")
         end
-        str = string(method.module) * ".eval(:(parentmodule($(method.name))))"
-        try
-            m = string(method.module.eval(:(parentmodule($(method.name))))) * "."
-        catch err
-            @warn "Can't forward method $(method.name) since the following line raises an error: $str"
-            return ""
+
+        # Module where the method is defined
+        ff = fieldtype(method.sig, 1)
+        if isabstracttype(ff)
+            # costructors
+            m = string(method.module.eval(:(parentmodule($(method.name)))))  # Constructor
+        else
+            # all methods except constructors
+            m = string(parentmodule(ff))
         end
+        m *= "."
         l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
         m = string(method.module) * "."
         l *= ") = $m:(" * string(method.name) * ")("
@@ -187,7 +191,6 @@ macro forward(sender, receiver, ekws...)
                 @error err;
             end
         end
-        println(length(mylist) - counterr, " method(s) forwarded")
         if counterr > 0
             println(counterr, " method(s) raised an error")
         end
