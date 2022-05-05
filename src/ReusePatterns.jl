@@ -174,7 +174,7 @@ macro forward(sender, receiver, ekws...)
         if isa(kw, Expr)  &&  (kw.head == :(=))
             push!(kws, Pair(kw.args[1], kw.args[2]))
         else
-            error("The @forward macro accepts two arguments and the withtypes=, allargs= keywords")
+            error("The @forward macro requires two arguments and (optionally) the same keywords accepted by forward()")
         end
     end
 
