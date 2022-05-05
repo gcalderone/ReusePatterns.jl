@@ -4,7 +4,6 @@ struct DataFrameMeta <: AbstractDataFrame
     p::DataFrame
     meta::Dict{String, Any}
     DataFrameMeta(args...; kw...) = new(DataFrame(args...; kw...), Dict{Symbol, Any}())
-    DataFrameMeta(df::DataFrame) = new(df, Dict{Symbol, Any}())
 end
 meta(d::DataFrameMeta) = getfield(d,:meta)  # <-- new functionality added to DataFrameMeta
 @forward((DataFrameMeta, :p), DataFrame)    # <-- reuse all existing functionalities
