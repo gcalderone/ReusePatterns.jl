@@ -5,13 +5,12 @@
 
 
 ### Warning
-The **ReusePatterns.jl** package provides an implementation for the concepts described below, namely method forwarding and concrete subtyping, to pursue code reusing in the Julia language.  However, the approaches suggested here are essentially workarounds, i.e. they work perfectly in most cases but may not work as expected in some corner case.
 
-Use it at your own risk!
+The **ReusePatterns.jl** package provides an implementation for the concepts described below, namely method forwarding and concrete subtyping, to pursue code reusing in the Julia language.  However the approaches suggested here are essentially workarounds, i.e. they work perfectly in most cases, but may not work as expected in some corner case. A more fundamental tool, possibly built-in into the language, is required to solve the problem in all cases (a recent discussion is available [here](https://discourse.julialang.org/t/dataframes-jl-metadata/84544/94), see also the links at the end of this page).
 
-Also, keep in mind that this package **is not** actively maintained, and will be updated only occasionally.
+As a consequence, this package **is no longer** actively maintained, and will be updated only occasionally.
 
-The issues addressed by **ReusePatterns.jl** had been discussed several times in the past (see links below) and more recently [here](https://discourse.julialang.org/t/dataframes-jl-metadata/84544/94), with no clear solution being identified by the community.
+**Use it at your own risk!**
 
 ______
 
