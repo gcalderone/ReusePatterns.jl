@@ -3,6 +3,19 @@
 
 [![Build Status](https://travis-ci.org/gcalderone/ReusePatterns.jl.svg?branch=master)](https://travis-ci.org/gcalderone/ReusePatterns.jl)
 
+
+### Warning
+The **ReusePatterns.jl** package provides an implementation for the concepts described below, namely method forwarding and concrete subtyping, to pursue code reusing in the Julia language.  However, the approaches suggested here are essentially workarounds, i.e. they work perfectly in most cases but may not work as expected in some corner case.
+
+Use it at your own risk!
+
+Also, keep in mind that this package **is not** actively maintained, and will be updated only occasionally.
+
+The issues addressed by **ReusePatterns.jl** had been discussed several times in the past (see links below) and more recently [here](https://discourse.julialang.org/t/dataframes-jl-metadata/84544/94), with no clear solution being identified by the community.
+
+______
+
+
 Assume an author **A** (say, Alice) wrote a very powerful Julia code, extensively used by user **C** (say, Charlie).  The best code reusing practice in this "two actors" scenario is the package deployment, thoroughly discussed in the Julia manual.  Now assume a third person **B** (say, Bob) slips between Alice and Charlie: he wish to reuse Alice's code to provide more complex/extended functionalities to Charlie.  Most likely Bob will need a more sophisticated reuse pattern...
 
 This package provides a few tools to facilitate Bob's work in reusing Alice's code, by mean of two of the most common reuse patterns: *composition* and *subtyping* ([implementation inheritance](https://en.wikipedia.org/wiki/Inheritance_(object-oriented_programming)) is not supported in Julia), and check which one provides the best solution.  Also, it aims to relieve Charlie from dealing with the underlying details, and seamlessly use the new functionalities introduced by Bob.
@@ -15,7 +28,7 @@ but several other topics apply as well (see list in the *Links* section below).
 
 
 ## Installation
-Latest version of **ReusePatterns.jl** is 0.3., which you may install with:
+Latest version of **ReusePatterns.jl** is 0.3.1, which you may install with:
 ```julia
 ] add ReusePatterns
 ```

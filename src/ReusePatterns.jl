@@ -11,7 +11,7 @@ export forward, @forward,
 """
 `forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method; withtypes=true, allargs=true)`
 
-Return a `Vector{String}` containing the Julia code to properly forward `method` calls to from a `sender` type to a receiver type.
+Return a `Vector{String}` containing the Julia code to properly forward `method` calls from a `sender` type to a receiver type.
 
 The `sender` tuple must contain a structure type, and a symbol with the name of one of its fields.
 
@@ -57,7 +57,8 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         ff = fieldtype(method.sig, 1)
         if isabstracttype(ff)
             # costructors
-            m = string(method.module.eval(:(parentmodule($(method.name)))))  # Constructor
+            m = string(method.module)
+            # m = string(method.module.eval(:(parentmodule($(method.name)))))  # Constructor
         else
             # all methods except constructors
             m = string(parentmodule(ff))
