@@ -56,15 +56,16 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         # Module where the method is defined
         ff = fieldtype(method.sig, 1)
         if isabstracttype(ff)
-            # costructors
+            # constructors
             m = string(method.module)
             # m = string(method.module.eval(:(parentmodule($(method.name)))))  # Constructor
         else
             # all methods except constructors
             m = string(parentmodule(ff))
         end
+        has_kwargs = length(Base.kwarg_decl(method)) > 0
         m *= "."
-        l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
+        l = "$m:(" * string(method.name) * ")(" * join(s,", ") * (has_kwargs ? "; kw..." : "")
         m = string(method.module) * "."
         l *= ") = $m:(" * string(method.name) * ")("
         s = "p" .* string.(1:method.nargs-1)
@@ -73,7 +74,7 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             push!(s, "args...")
         end
         s[argid] .= "getfield(" .* s[argid] .* ", :$sender_symb)"
-        l *= join(s, ", ") * "; kw...)"
+        l *= join(s, ", ") * (has_kwargs ? "; kw...)" : ")")
         l = join(split(l, "#"))
         return l
     end
