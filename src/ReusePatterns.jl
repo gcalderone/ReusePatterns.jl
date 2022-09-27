@@ -53,6 +53,9 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             push!(s, "args...")
         end
 
+
+        @show method
+
         # Module where the method is defined
         ff = fieldtype(method.sig, 1)
         if isabstracttype(ff)
@@ -178,16 +181,16 @@ macro forward(sender, receiver, ekws...)
     end
 
     out = quote
-        counterr = 0
+        local counterr = 0
         mylist = forward($sender, $receiver; $kws...)
         for line in mylist
             try
                 eval(Meta.parse("$line"))
             catch err
-                global counterr += 1
+                counterr += 1
                 println()
                 println("$line")
-                @error err;
+                @error err
             end
         end
         if counterr > 0
