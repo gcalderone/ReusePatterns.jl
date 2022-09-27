@@ -173,3 +173,36 @@ p = Named{RegularPolygon}("Heptagon", 7, 1)
 plot(p, color="orange", dt=4)
 circle = Named{RegularPolygon}("Circle", 1000, 1)
 plot(circle, color="dark-green", dt=4)
+
+@testset "Array composition" begin
+    # github.com/gcalderone/ReusePatterns.jl/issues/5
+    struct MyArray{T, N}  # <: AbstractArray{T, N}
+        a::Array{T, N}
+        attr::Int
+        MyArray(T, dims::NTuple{N, Int}) where {N} = new{T, N}(zeros(T, dims...), 1)
+    end
+
+    @forward((MyArray, :a), Array)
+
+    a = MyArray(Float32, (1, 2, 3))
+
+    # docs.julialang.org/en/v1/manual/interfaces/#man-interface-array
+    a[1] = -1
+    a[end] = 9
+    @test a[1] == a[1, 1, 1] == -1
+    @test a[end] == a[1, 2, 3] == 9
+
+    @test size(a) == (1, 2, 3)
+    @test length(a) == 6
+    @test ndims(a) == 3
+    @test firstindex(a) == 1
+    @test lastindex(a) == 6
+    @test axes(a, 1) == 1:1
+    @test axes(a, 2) == 1:2
+    @test axes(a, 3) == 1:3
+    @test IndexStyle(a) == IndexLinear()
+
+    @test_broken eltype(a) == Float32  # Any
+    @test_broken similar(a) isa MyArray  # Array
+    @test_broken copy(a) isa MyArray  # Array
+end

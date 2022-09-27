@@ -56,15 +56,17 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
         # Module where the method is defined
         ff = fieldtype(method.sig, 1)
         if isabstracttype(ff)
-            # costructors
+            # constructors
             m = string(method.module)
             # m = string(method.module.eval(:(parentmodule($(method.name)))))  # Constructor
         else
             # all methods except constructors
             m = string(parentmodule(ff))
         end
+        # has_kwargs = length(Base.kwarg_decl(method)) > 0
+        has_kwargs = method.module != Base.Core
         m *= "."
-        l = "$m:(" * string(method.name) * ")(" * join(s,", ") * "; kw..."
+        l = "$m:(" * string(method.name) * ")(" * join(s,", ") * (has_kwargs ? "; kw..." : "")
         m = string(method.module) * "."
         l *= ") = $m:(" * string(method.name) * ")("
         s = "p" .* string.(1:method.nargs-1)
@@ -73,7 +75,7 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             push!(s, "args...")
         end
         s[argid] .= "getfield(" .* s[argid] .* ", :$sender_symb)"
-        l *= join(s, ", ") * "; kw...)"
+        l *= join(s, ", ") * (has_kwargs ? "; kw...)" : ")")
         l = join(split(l, "#"))
         return l
     end
@@ -177,21 +179,18 @@ macro forward(sender, receiver, ekws...)
     end
 
     out = quote
-        counterr = 0
-        mylist = forward($sender, $receiver; $kws...)
-        for line in mylist
+        local counterr = 0
+        for line in forward($sender, $receiver; $kws...)
             try
                 eval(Meta.parse("$line"))
             catch err
-                global counterr += 1
+                counterr += 1
                 println()
                 println("$line")
-                @error err;
+                @error err
             end
         end
-        if counterr > 0
-            println(counterr, " method(s) raised an error")
-        end
+        counterr == 0 || println(counterr, " method(s) raised an error")
     end
     return esc(out)
 end
