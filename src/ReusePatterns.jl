@@ -179,8 +179,7 @@ macro forward(sender, receiver, ekws...)
 
     out = quote
         local counterr = 0
-        mylist = forward($sender, $receiver; $kws...)
-        for line in mylist
+        for line in forward($sender, $receiver; $kws...)
             try
                 eval(Meta.parse("$line"))
             catch err
@@ -190,9 +189,7 @@ macro forward(sender, receiver, ekws...)
                 @error err
             end
         end
-        if counterr > 0
-            println(counterr, " method(s) raised an error")
-        end
+        counterr == 0 || println(counterr, " method(s) raised an error")
     end
     return esc(out)
 end
