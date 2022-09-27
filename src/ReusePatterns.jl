@@ -63,7 +63,8 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             # all methods except constructors
             m = string(parentmodule(ff))
         end
-        has_kwargs = length(Base.kwarg_decl(method)) > 0
+        # has_kwargs = length(Base.kwarg_decl(method)) > 0
+        has_kwargs = method.module != Base.Core
         m *= "."
         l = "$m:(" * string(method.name) * ")(" * join(s,", ") * (has_kwargs ? "; kw..." : "")
         m = string(method.module) * "."
