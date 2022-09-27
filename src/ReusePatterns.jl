@@ -53,9 +53,6 @@ function forward(sender::Tuple{Type,Symbol}, receiver::Type, method::Method;
             push!(s, "args...")
         end
 
-
-        @show method
-
         # Module where the method is defined
         ff = fieldtype(method.sig, 1)
         if isabstracttype(ff)
